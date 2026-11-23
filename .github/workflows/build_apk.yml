@@ -10,15 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
       - name: Build APK
         run: |
           flutter pub get
-          flutter build apk --release
+          cd sample_app 
+          flutter build apk --release --split-per-abi
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: sample_app/build/app/outputs/flutter-apk/app-release.apk
