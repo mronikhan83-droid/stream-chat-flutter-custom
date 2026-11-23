@@ -1,0 +1,1897 @@
+// ignore_for_file: lines_longer_than_80_chars
+
+import 'package:intl/intl.dart';
+import 'package:jiffy/jiffy.dart';
+import 'package:stream_chat_flutter_core/stream_chat_flutter_core.dart';
+
+import '../message_list_view/message_list_view.dart';
+import '../misc/connection_status_builder.dart';
+import 'accessibility_translations.dart';
+
+/// Translation strings for the stream chat widgets
+abstract class Translations {
+  /// Accessibility (a11y) translation strings.
+  ///
+  /// Namespaced separately from visible strings because a11y translations
+  /// have different maintenance needs (screen-reader read-order testing,
+  /// pacing punctuation) and follow their own naming convention. See
+  /// [AccessibilityTranslations].
+  AccessibilityTranslations get accessibility;
+
+  /// The error shown when [launchURL] fails
+  String get launchUrlError;
+
+  /// The error shown when loading users fails
+  String get loadingUsersError;
+
+  /// The label for "retry" button
+  String get retryLabel;
+
+  /// The label for showing no users
+  String get noUsersLabel;
+
+  /// The label for showing no photo or video
+  String get noPhotoOrVideoLabel;
+
+  /// The text for showing user is online
+  String get userOnlineText;
+
+  /// The text for showing the last online of the user
+  String get userLastOnlineText;
+
+  /// The text shown when [users] starts typing
+  String userTypingText(Iterable<User> users);
+
+  /// The label for "thread reply"
+  String get threadReplyLabel;
+
+  /// The label for the thread view header ("Thread").
+  String get threadLabel;
+
+  /// The text for showing if the message is only visible to you
+  String get onlyVisibleToYouText;
+
+  /// The text for showing the thread reply count
+  String threadReplyCountText(int count);
+
+  /// The text for showing the attachments upload progress
+  String attachmentsUploadProgressText({
+    required int completed,
+    required int total,
+  });
+
+  /// The text for showing who pinned the message
+  String pinnedByUserText({
+    required User pinnedBy,
+    required User currentUser,
+  });
+
+  /// The text for showing there are empty messages
+  String get emptyMessagesText;
+
+  /// The text for showing generic error
+  String get genericErrorText;
+
+  /// The error shown when loading messages fails
+  String get loadingMessagesError;
+
+  /// The text for showing the result count in [StreamMessageSearchListView]
+  String resultCountText(int count);
+
+  /// The text for showing the message is deleted
+  String get messageDeletedText;
+
+  /// The label for message deleted
+  String get messageDeletedLabel;
+
+  /// The label for system message
+  String get systemMessageLabel;
+
+  /// The label for showing the message is edited
+  String get editedMessageLabel;
+
+  /// The label for message reactions
+  String get messageReactionsLabel;
+
+  /// The text for showing there are no chats
+  String get emptyChatMessagesText;
+
+  /// The text for showing the thread separator in case [StreamMessageListView]
+  /// contains a parent message
+  String threadSeparatorText(int replyCount);
+
+  /// The text for showing the unread messages count
+  /// in the [StreamMessageListView]
+  @Deprecated('Use unreadMessagesSeparatorLabel instead. Will be removed in the next major version.')
+  String unreadMessagesSeparatorText();
+
+  /// The label for the unread messages separator in the
+  /// [StreamMessageListView], e.g. "5 unread messages".
+  ///
+  /// Falls back to the count-less `unreadMessagesSeparatorText`, so an
+  /// implementation written before this method existed — including one that
+  /// customises only that older string — keeps rendering its own text
+  /// rather than silently reverting to the built-in copy. Override this to
+  /// show the count.
+  ///
+  /// Note that the fallback only helps classes that `extends` (or mix in)
+  /// [Translations]: Dart does not inherit method bodies through
+  /// `implements`, so a class implementing this interface directly has to
+  /// add this member. See the CHANGELOG for the migration.
+  String unreadMessagesSeparatorLabel({required int count}) {
+    // ignore: deprecated_member_use_from_same_package
+    return unreadMessagesSeparatorText();
+  }
+
+  /// The label for "connected" in [StreamConnectionStatusBuilder]
+  String get connectedLabel;
+
+  /// The label for "disconnected" in [StreamConnectionStatusBuilder]
+  String get disconnectedLabel;
+
+  /// The label for "reconnecting" in [StreamConnectionStatusBuilder]
+  String get reconnectingLabel;
+
+  /// The label for also send
+  /// as direct message "checkbox" in [StreamMessageComposer]
+  String get alsoSendAsDirectMessageLabel;
+
+  /// The label for search Gif
+  String get searchGifLabel;
+
+  /// The label for the MessageInput hint when permission denied on sendMessage
+  String get sendMessagePermissionError;
+
+  /// The label for add a comment or send in case of
+  /// attachments inside [StreamMessageComposer]
+  String get addACommentOrSendLabel;
+
+  /// The label for write a message in [StreamMessageComposer]
+  String get writeAMessageLabel;
+
+  /// The placeholder shown in [StreamMessageComposer] while slow mode is
+  /// active for the current user.
+  ///
+  /// [cooldownTimeOut] is the number of seconds remaining before the user
+  /// can send another message. Defaults to `'Slow mode, wait ${cooldownTimeOut}s\u2026'`
+  /// which renders as e.g. "Slow mode, wait 9s…".
+  String slowModeOnLabel(int cooldownTimeOut);
+
+  /// The placeholder shown in the composer when a user-target command (for
+  /// example `/mute`, `/unmute`, `/ban`, `/unban`) is active.
+  ///
+  /// Renders literally, for example as `@username`, to hint that the user
+  /// should select or type a username.
+  String get commandUsernameLabel;
+
+  /// The label for instant commands in [StreamMessageComposer]
+  String get instantCommandsLabel;
+
+  /// The error surfaced when the user taps a slash command while the
+  /// composer is editing a message.
+  String get commandUnavailableWhileEditingError;
+
+  /// The error surfaced when the user taps a moderation slash command
+  /// (e.g. `/mute`, `/ban`) while the composer is quoting another message.
+  String get commandUnavailableWhileQuotingError;
+
+  /// The generic error surfaced when a slash command is unavailable for a
+  /// reason not covered by [commandUnavailableWhileEditingError] or
+  /// [commandUnavailableWhileQuotingError].
+  String get commandUnavailableError;
+
+  /// The error shown in case the file is too large even after compression
+  /// while uploading via [StreamMessageComposer]
+  String fileTooLargeAfterCompressionError(double limitInMB);
+
+  /// The error shown in case the file is too large
+  /// while uploading via [StreamMessageComposer]
+  String fileTooLargeError(double limitInMB);
+
+  /// The error shown when a file's type (extension) is not allowed for upload.
+  ///
+  /// [extension] is the raw extension without a leading dot (e.g. `'exe'`),
+  /// or `null` when the extension is unknown.
+  String fileTypeNotSupportedError(String? extension);
+
+  /// The error shown when the file being read has no bytes
+  String get couldNotReadBytesFromFileError;
+
+  /// The label for "add a file"
+  String get addAFileLabel;
+
+  /// The label for "upload a photo"
+  String get uploadAPhotoLabel;
+
+  /// The label for "upload a video"
+  String get uploadAVideoLabel;
+
+  /// The label for "photo from camera"
+  String get photoFromCameraLabel;
+
+  /// The label for "video from camera"
+  String get videoFromCameraLabel;
+
+  /// The label for "upload a file"
+  String get uploadAFileLabel;
+
+  /// The error shown when something went wrong
+  String get somethingWentWrongError;
+
+  /// The title shown when there is no internet connection.
+  String get connectionErrorTitle;
+
+  /// The description shown when there is no internet connection.
+  String get connectionErrorDescription;
+
+  /// The title shown when the connection is too slow or the request timed out.
+  String get slowConnectionErrorTitle;
+
+  /// The description shown when the connection is too slow or the request
+  /// timed out.
+  String get slowConnectionErrorDescription;
+
+  /// The title shown for a generic, uncategorised error.
+  String get genericErrorTitle;
+
+  /// The description shown for a generic, uncategorised error.
+  String get genericErrorDescription;
+
+  /// The label for "OK"
+  String get okLabel;
+
+  /// The label for a link disabled error
+  String get linkDisabledError;
+
+  /// The additional info on a link disabled error
+  String get linkDisabledDetails;
+
+  /// The label for "add more files"
+  String get addMoreFilesLabel;
+
+  /// The message shown for asking photo and video access permission
+  String get enablePhotoAndVideoAccessMessage;
+
+  /// The message shown for asking photo and video access permission
+  String get enableFileAccessMessage;
+
+  /// The message shown for asking gallery access permission
+  String get allowGalleryAccessMessage;
+
+  /// The message shown for asking file access permission
+  String get allowFileAccessMessage;
+
+  /// The label for "flag message"
+  String get flagMessageLabel;
+
+  /// The question asked while showing flag message dialog
+  String get flagMessageQuestion;
+
+  /// The label for "Flag"
+  String get flagLabel;
+
+  /// The label for "Cancel"
+  String get cancelLabel;
+
+  /// The label for successful message flag
+  String get flagMessageSuccessfulLabel;
+
+  /// The text for showing the message if successfully flagged
+  String get flagMessageSuccessfulText;
+
+  /// The label for "delete message"
+  String get deleteMessageLabel;
+
+  /// The question asked while showing delete message dialog
+  String get deleteMessageQuestion;
+
+  /// The label for "Delete"
+  String get deleteLabel;
+
+  /// The text for showing the operation could not be completed
+  String get operationCouldNotBeCompletedText;
+
+  /// The label for "Reply"
+  String get replyLabel;
+
+  /// The text for showing pin/un-pin functionality in [MessageWidget]
+  /// based on [pinned]
+  String togglePinUnpinText({required bool pinned});
+
+  /// The text for marking message as unread functionality in [MessageWidget]
+  String get markAsUnreadLabel;
+
+  /// The text for unread count indicator
+  String unreadCountIndicatorLabel({required int unreadCount});
+
+  /// The text of an error shown when marking a message as unread fails
+  String get markUnreadError;
+
+  /// The text for showing delete/retry-delete based on [isDeleteFailed]
+  String toggleDeleteRetryDeleteMessageText({required bool isDeleteFailed});
+
+  /// The label for "copy message"
+  String get copyMessageLabel;
+
+  /// The label for "edit message"
+  String get editMessageLabel;
+
+  /// The text for showing resend/resend-edited message
+  /// based on [isUpdateFailed]
+  String toggleResendOrResendEditedMessage({required bool isUpdateFailed});
+
+  /// The label for "Photos"
+  String get photosLabel;
+
+  /// The label for "Photos & Videos"
+  String get photosAndVideosLabel;
+
+  /// The text for showing on which [date] and [time] the message was sent
+  String sentAtText({required DateTime date, required DateTime time});
+
+  /// The label for "Today"
+  String get todayLabel;
+
+  /// The label for "Yesterday"
+  String get yesterdayLabel;
+
+  /// The label for "Just now", shown for timestamps within the last minute.
+  String get justNowLabel;
+
+  /// The text for showing the channel is muted
+  String get channelIsMutedText;
+
+  /// The text for showing there is no title
+  String get noTitleText;
+
+  /// The label for "let's start chatting"
+  String get letsStartChattingLabel;
+
+  /// The label for sending the first message
+  String get sendingFirstMessageLabel;
+
+  /// The label for "start a chat"
+  String get startAChatLabel;
+
+  /// The error shown when loading channel fails
+  String get loadingChannelsError;
+
+  /// The label for "Delete conversation"
+  String get deleteConversationLabel;
+
+  /// The question asked while showing delete conversation dialog
+  String get deleteConversationQuestion;
+
+  /// The label for "Stream Chat"
+  String get streamChatLabel;
+
+  /// The text for showing searching for network
+  String get searchingForNetworkText;
+
+  /// The label for "Offline"
+  String get offlineLabel;
+
+  /// The label for "Try again"
+  String get tryAgainLabel;
+
+  /// The text for showing the members count based on [count]
+  String membersCountText(int count);
+
+  /// The text for showing the watchers count based on [count]
+  String watchersCountText(int count);
+
+  /// The text for showing the combined members and online-watchers count in
+  /// the channel header subtitle of a group channel.
+  ///
+  /// When [onlineCount] is `0`, the returned string is equivalent to
+  /// [membersCountText]. Otherwise, the result bakes in the separator and
+  /// word order chosen by the current locale — e.g. `'42 Members, 5 Online'`
+  /// in English or `'42人、5人がオンライン'` in Japanese.
+  String membersCountWithOnlineText({
+    required int memberCount,
+    required int onlineCount,
+  });
+
+  /// The label for "View Info"
+  String get viewInfoLabel;
+
+  /// The label for "Leave Group"
+  String get leaveGroupLabel;
+
+  /// The label for "Leave"
+  String get leaveLabel;
+
+  /// The label for "Leave conversation"
+  String get leaveConversationLabel;
+
+  /// The question asked while showing leave conversation dialog
+  String get leaveConversationQuestion;
+
+  /// The label for "Show in chat"
+  String get showInChatLabel;
+
+  /// The label for "Save Image"
+  String get saveImageLabel;
+
+  /// The label for "Save Video"
+  String get saveVideoLabel;
+
+  /// The label for "Upload Error"
+  String get uploadErrorLabel;
+
+  /// The label for "Giphy"
+  String get giphyLabel;
+
+  /// The label for "Shuffle"
+  String get shuffleLabel;
+
+  /// The label for "Send"
+  String get sendLabel;
+
+  /// The label for "With"
+  String get withText;
+
+  /// The text shown for "In"
+  String get inText;
+
+  /// The text shown for "You"
+  String get youText;
+
+  /// Gallery footer pagination text
+  String galleryPaginationText({
+    required int currentPage,
+    required int totalPages,
+  });
+
+  /// The text shown for "File"
+  String get fileText;
+
+  /// The label for "Reply to message"
+  String get replyToMessageLabel;
+
+  /// The label for the composer reply header when quoting another user's
+  /// message (e.g. "Reply to Alice").
+  String replyToUserLabel(String userName);
+
+  /// The label for "View library"
+  String get viewLibrary;
+
+  /// Label for "Attachment limit exceeded:
+  /// it's not possible to add more than $limit attachments"
+  String attachmentLimitExceedError(int limit);
+
+  /// The label for "Download"
+  String get downloadLabel;
+
+  /// The text for "Mute Group"/"Unmute Group" based on the value of [isMuted].
+  String toggleMuteUnmuteGroupText({required bool isMuted});
+
+  /// The text for "Mute User"/"Unmute User" based on the value of [isMuted].
+  String toggleMuteUnmuteUserText({required bool isMuted});
+
+  /// The text for "Block User"/"Unblock User" based on the value of [isBlocked].
+  String toggleBlockUnblockUserText({required bool isBlocked});
+
+  /// The text for "Are you sure you want to mute this group?"/"Are you sure you want to unmute this group?"
+  /// based on the value of [isMuted].
+  String toggleMuteUnmuteGroupQuestion({required bool isMuted});
+
+  /// The text for "Are you sure you want to mute this user?"/"Are you sure you want to unmute this user?"
+  /// based on the value of [isMuted].
+  String toggleMuteUnmuteUserQuestion({required bool isMuted});
+
+  /// The text for "MUTE"/"UNMUTE" based on the value of [isMuted].
+  String toggleMuteUnmuteAction({required bool isMuted});
+
+  /// The label for "Create poll".
+  ///
+  /// If [isNew] is true, it returns "Create a new poll".
+  String createPollLabel({bool isNew = false});
+
+  /// The label for "Question".
+  ///
+  /// If [isPlural] is true, it returns "Questions".
+  String questionLabel({bool isPlural = false});
+
+  /// The label for "Ask a question".
+  String get askAQuestionLabel;
+
+  /// The error shown when the poll question [length] is not within the [range].
+  ///
+  /// Returns 'Question must be a least ${range.min} characters long' if the
+  /// question is too short and 'Question must be at most ${range.max}
+  /// characters long' if the question is too long.
+  String? pollQuestionValidationError(int length, Range<int> range);
+
+  /// The label for "Option".
+  ///
+  /// If [isPlural] is true, it returns "Options".
+  String optionLabel({bool isPlural = false});
+
+  /// The error shown when the poll option text is empty.
+  String get pollOptionEmptyError;
+
+  /// The error shown when the poll option is a duplicate.
+  String get pollOptionDuplicateError;
+
+  /// The label for "Add an option".
+  String get addAnOptionLabel;
+
+  /// The label for "Multiple answers".
+  String get multipleAnswersLabel;
+
+  /// The description shown under the "Multiple answers" toggle in the poll
+  /// creator (e.g. "Select more than one option").
+  String get multipleAnswersDescription;
+
+  /// The label for "Maximum votes per person".
+  String get maximumVotesPerPersonLabel;
+
+  /// The description shown under the "Maximum votes per person" stepper in
+  /// the poll creator, describing the allowed vote range (e.g. "Choose
+  /// between 2–10 options").
+  String maximumVotesPerPersonDescription([Range<int>? range]);
+
+  /// The error shown when the max [votes] is not within the [range].
+  ///
+  /// Returns 'Vote count must be at least ${range.min}' if the vote count is
+  /// too short and 'Vote count must be at most ${range.max}' if the vote count
+  /// is too long.
+  String? maxVotesPerPersonValidationError(int votes, Range<int> range);
+
+  /// The label for "Anonymous poll".
+  String get anonymousPollLabel;
+
+  /// The description shown under the "Anonymous poll" toggle in the poll
+  /// creator (e.g. "Hide who voted").
+  String get anonymousPollDescription;
+
+  /// The label for "Poll Options".
+  String get pollOptionsLabel;
+
+  /// The label for "Suggest an option".
+  String get suggestAnOptionLabel;
+
+  /// The description shown under the "Suggest an option" toggle in the poll
+  /// creator (e.g. "Let others add options").
+  String get suggestAnOptionDescription;
+
+  /// The label for "Enter a new option".
+  String get enterANewOptionLabel;
+
+  /// The label for "Add a comment".
+  String get addACommentLabel;
+
+  /// The description shown under the "Add a comment" toggle in the poll
+  /// creator (e.g. "Allow others to add comments").
+  String get addACommentDescription;
+
+  /// The label for "Poll comments".
+  String get pollCommentsLabel;
+
+  /// The label for "Update your comment".
+  String get updateYourCommentLabel;
+
+  /// The label for "Enter your comment".
+  String get enterYourCommentLabel;
+
+  /// The confirmation title shown when the user tries to end a poll.
+  String get endVoteConfirmationTitle;
+
+  /// The confirmation body message shown when the user tries to end a poll.
+  String get endVoteConfirmationMessage;
+
+  /// The label for "delete poll option"
+  String get deletePollOptionLabel;
+
+  /// The question asked while showing delete poll option dialog
+  String get deletePollOptionQuestion;
+
+  /// The label for "Create".
+  String get createLabel;
+
+  /// The label for "End".
+  String get endLabel;
+
+  /// The label for Poll voting mode.
+  ///
+  /// Returns different labels based on the [votingMode].
+  ///
+  /// eg: 'Vote ended', 'Select one', 'Select up to $count',
+  /// 'Select one or more'.
+  String pollVotingModeLabel(PollVotingMode votingMode);
+
+  /// The label for "See all options".
+  ///
+  /// If [totalOptions] is provided, it returns "See all $count options".
+  String seeAllOptionsLabel({int? count});
+
+  /// The label for "View Comments".
+  String get viewCommentsLabel;
+
+  /// The label for "View Results".
+  String get viewResultsLabel;
+
+  /// The label for "End Poll".
+  String get endVoteLabel;
+
+  /// The label for "Poll Results".
+  String get pollResultsLabel;
+
+  /// The label for the poll votes screen app bar title (shown when viewing
+  /// all votes for a specific poll option).
+  String get pollVotesLabel;
+
+  /// The label for "$count votes".
+  String voteCountLabel({int? count});
+
+  /// The label for the total vote count footer in the poll results dialog,
+  /// e.g. "$count votes total".
+  String totalVoteCountLabel({int? count});
+
+  /// The label for "Show all votes".
+  ///
+  /// If [count] is provided, it returns "Show all $count votes".
+  String showAllVotesLabel({int? count});
+
+  /// The label for a generic "View all" call-to-action, e.g. the footer
+  /// action of a truncated list.
+  String get viewAllLabel;
+
+  /// The label for "There are no poll votes currently".
+  String get noPollVotesLabel;
+
+  /// The label for "Error loading poll votes".
+  String get loadingPollVotesError;
+
+  /// The label for "replied to:"
+  String get repliedToLabel;
+
+  /// The label for "$count new threads"
+  String newThreadsLabel({required int count});
+
+  /// The label for "Loading..."
+  String get loadingLabel;
+
+  /// The label for "Slide to cancel"
+  String get slideToCancelLabel;
+
+  /// The label for "Hold to record"
+  String get holdToRecordLabel;
+
+  /// The label for "Send Anyway"
+  String get sendAnywayLabel;
+
+  /// Text shown when a message was blocked by moderation policies
+  String get moderatedMessageBlockedText;
+
+  /// The title of the moderated message warning dialog
+  String get moderationReviewModalTitle;
+
+  /// The content text of the moderated message warning dialog
+  String get moderationReviewModalDescription;
+
+  /// The text for empty message previews
+  String get emptyMessagePreviewText;
+
+  /// The text for voice recording in channel list preview
+  String get voiceRecordingText;
+
+  /// The text for audio attachment in channel list preview
+  String get audioAttachmentText;
+
+  /// The text for image attachment in channel list preview
+  String get imageAttachmentText;
+
+  /// The text for video attachment in channel list preview
+  String get videoAttachmentText;
+
+  /// The text for file attachment in channel list preview
+  String get fileAttachmentText;
+
+  /// The text for link attachment in channel list preview
+  String get linkAttachmentText;
+
+  /// The text for multiple files attachment in channel list preview
+  String filesAttachmentCountText(int count);
+
+  /// The text for multiple photos attachment in channel list preview
+  String photosAttachmentCountText(int count);
+
+  /// The text for multiple videos attachment in channel list preview
+  String videosAttachmentCountText(int count);
+
+  /// The text for poll when current user voted
+  String get pollYouVotedText;
+
+  /// The text for poll when someone voted
+  String pollSomeoneVotedText(String username);
+
+  /// The text for poll when current user created
+  String get pollYouCreatedText;
+
+  /// The text for poll when someone created
+  String pollSomeoneCreatedText(String username);
+
+  /// The label for draft message
+  String get draftLabel;
+
+  /// The label for location attachment.
+  ///
+  /// [isLive] indicates if the location is live or not.
+  String locationLabel({bool isLive = false});
+
+  /// The text shown when there are no conversations yet.
+  String get noConversationsYetText;
+
+  /// The text shown when there are no threads yet.
+  String get replyToStartThreadText;
+
+  /// The text shown to prompt the user to send a message.
+  String get sendMessageToStartConversationText;
+
+  /// The label for the "Saved for later" message annotation.
+  String get savedForLaterLabel;
+
+  /// The annotation label shown on a message that was replied to a thread,
+  /// displayed in channel view (e.g. "Replied to a thread").
+  String get repliedToThreadAnnotationLabel;
+
+  /// The annotation label shown on a message that was also sent in channel,
+  /// displayed in thread view (e.g. "Also sent in channel").
+  String get alsoSentInChannelAnnotationLabel;
+
+  /// The "View" link label used in message annotations.
+  String get viewLabel;
+
+  /// The annotation label for a reminder (e.g. "Reminder set").
+  String get reminderSetLabel;
+
+  /// The text displaying the reminder time (e.g. "Today at 3:00 PM").
+  String reminderAtText(String time);
+
+  /// The annotation label shown on a message currently displayed as a
+  /// translation (e.g. "Translated").
+  String get translatedLabel;
+
+  /// The annotation label shown on a message currently displayed in its
+  /// original language, despite a translation being available (e.g.
+  /// "Original").
+  String get originalLabel;
+
+  /// The link label that reverts a translated message to its original text.
+  String get showOriginalLabel;
+
+  /// The link label that reveals a translation for a message currently shown
+  /// in its original language.
+  String get showTranslationLabel;
+
+  /// The annotation label shown on a message currently displayed as a
+  /// translation, when the message's original language is known.
+  ///
+  /// [languageCode] is the raw source-language code Stream Chat's
+  /// translation API reports via `Message.i18n['language']` — an ISO 639-1
+  /// code, optionally with a regional suffix (e.g. `es-MX`). Implementations
+  /// resolve it to a localized display name, producing something like
+  /// "Translated from Spanish".
+  String translatedFromLanguageText(String languageCode);
+
+  /// The label for "Create a poll and let everyone vote!"
+  String get createPollPromptLabel;
+
+  /// The label for "Take a photo and share"
+  String get takePhotoAndShareLabel;
+
+  /// The label for "Take a video and share"
+  String get takeVideoAndShareLabel;
+
+  /// The label for "Open camera"
+  String get openCameraLabel;
+
+  /// The label for "Select files to share"
+  String get selectFilesToShareLabel;
+
+  /// The label for "Open files"
+  String get openFilesLabel;
+
+  /// The label for unsupported attachment types
+  String get unsupportedAttachmentLabel;
+
+  /// The label for "CONFIRM" (e.g. [StreamMessageActionConfirmationModal]).
+  String get confirmLabel;
+
+  /// The text shown when there are no reactions on a message.
+  String get emptyReactionsText;
+
+  /// The error shown when the reactions list fails to load.
+  String get loadingReactionsError;
+
+  /// The label hint shown next to the viewer's own reaction indicating the
+  /// reaction can be tapped to remove it.
+  String get tapToRemoveReactionLabel;
+
+  /// The header text for the reaction detail sheet showing the count of
+  /// visible reactions (e.g. "1 Reaction" / "5 Reactions").
+  String reactionsCountText(int count);
+
+  /// The text shown under the "@channel" entry in the mention autocomplete,
+  /// describing that it notifies every channel member.
+  String get notifyChannelText;
+
+  /// The text shown under the "@here" entry in the mention autocomplete,
+  /// describing that it notifies every online channel member.
+  String get notifyHereText;
+
+  /// The text shown under a role mention entry in the mention autocomplete,
+  /// describing that it notifies every member holding the role named [role].
+  String notifyRoleText(String role);
+
+  /// The send time of a scheduled message, such as "Send Wed, Oct 21 at
+  /// 8:00 AM".
+  ///
+  /// The [scheduledAt] is shown in local time.
+  String scheduledMessageSendAtText({required DateTime scheduledAt});
+
+  /// The status of a scheduled message while it is being sent, such as
+  /// "Sending…".
+  String get scheduledMessageSendingLabel;
+
+  /// The status of a scheduled message while its attachments upload, such as
+  /// "Uploading…".
+  String get scheduledMessageUploadingLabel;
+
+  /// The prefix of the preview of a scheduled reply in a thread, such as
+  /// "Thread reply:".
+  String get scheduledThreadReplyPrefixText;
+
+  /// The prefix of the preview of a scheduled message quoting another, such
+  /// as "Reply to Maya:".
+  ///
+  /// [name] is the quoted message's author, or null when it is not known.
+  String scheduledQuoteReplyPrefixText({String? name});
+
+  /// The reason a scheduled message failed, such as "This channel is frozen".
+  ///
+  /// A null or unrecognized [reason] gives a generic text. [isQuoteDeleted]
+  /// explains a [ScheduledMessageFailureReason.invalidMessage] whose quoted
+  /// message was deleted.
+  String scheduledMessageFailureReasonText({
+    ScheduledMessageFailureReason? reason,
+    bool isQuoteDeleted = false,
+  });
+
+  /// The text shown when there are no scheduled messages.
+  String get noScheduledMessagesText;
+
+  /// The error shown when the scheduled messages could not be loaded.
+  String get loadingScheduledMessagesError;
+
+  /// The label of the action that edits a scheduled message that failed and
+  /// schedules it again, such as "Edit & Reschedule".
+  String get editAndRescheduleLabel;
+
+  /// The label of the action that changes when a scheduled message is sent.
+  String get rescheduleLabel;
+
+  /// The label of the action that sends a scheduled message right away.
+  String get sendNowLabel;
+}
+
+/// Default implementation of Translation strings for the stream chat widgets
+class DefaultTranslations implements Translations {
+  const DefaultTranslations._();
+
+  /// Singleton instance of [DefaultTranslations]
+  static const instance = DefaultTranslations._();
+
+  @override
+  AccessibilityTranslations get accessibility => const DefaultAccessibilityTranslations();
+
+  @override
+  String get launchUrlError => 'Cannot launch the url';
+
+  @override
+  String get loadingUsersError => 'Error loading users';
+
+  @override
+  String get noUsersLabel => 'There are no users currently';
+
+  @override
+  String get noPhotoOrVideoLabel => 'There is no photo or video';
+
+  @override
+  String get retryLabel => 'Retry';
+
+  @override
+  String get userLastOnlineText => 'Last online';
+
+  @override
+  String get userOnlineText => 'Online';
+
+  @override
+  String userTypingText(Iterable<User> users) {
+    if (users.isEmpty) return '';
+    final first = users.first;
+    if (users.length == 1) {
+      return '${first.name} is typing';
+    }
+    return '${first.name} and ${users.length - 1} more are typing';
+  }
+
+  @override
+  String get threadReplyLabel => 'Thread Reply';
+
+  @override
+  String get threadLabel => 'Thread';
+
+  @override
+  String get onlyVisibleToYouText => 'Only visible to you';
+
+  @override
+  String threadReplyCountText(int count) => count == 1 ? '1 reply' : '$count replies';
+
+  @override
+  String attachmentsUploadProgressText({
+    required int completed,
+    required int total,
+  }) => 'Uploaded $completed of $total ...';
+
+  @override
+  String pinnedByUserText({
+    required User pinnedBy,
+    required User currentUser,
+  }) {
+    final pinnedByCurrentUser = currentUser.id == pinnedBy.id;
+    if (pinnedByCurrentUser) return 'Pinned by You';
+    return 'Pinned by ${pinnedBy.name}';
+  }
+
+  @override
+  String get sendMessagePermissionError => "You don't have permission to send messages";
+
+  @override
+  String get emptyMessagesText => 'No messages yet';
+
+  @override
+  String get genericErrorText => 'Something went wrong';
+
+  @override
+  String get loadingMessagesError => 'Error loading messages';
+
+  @override
+  String resultCountText(int count) => '$count results';
+
+  @override
+  String get messageDeletedText => 'This message is deleted.';
+
+  @override
+  String get messageDeletedLabel => 'Message deleted';
+
+  @override
+  String get systemMessageLabel => 'System Message';
+
+  @override
+  String get editedMessageLabel => 'Edited';
+
+  @override
+  String get messageReactionsLabel => 'Message Reactions';
+
+  @override
+  String get emptyChatMessagesText => 'No chats here yet...';
+
+  @override
+  String threadSeparatorText(int replyCount) {
+    if (replyCount == 1) return '1 reply';
+    return '$replyCount replies';
+  }
+
+  @override
+  String get connectedLabel => 'Connected';
+
+  @override
+  String get disconnectedLabel => 'Disconnected';
+
+  @override
+  String get reconnectingLabel => 'Reconnecting...';
+
+  @override
+  String get alsoSendAsDirectMessageLabel => 'Also send in Channel';
+
+  @override
+  String get addACommentOrSendLabel => 'Add a comment or send';
+
+  @override
+  String get searchGifLabel => 'Search GIFs';
+
+  @override
+  String get writeAMessageLabel => 'Send a message';
+
+  @override
+  String get instantCommandsLabel => 'Instant Commands';
+
+  @override
+  String get commandUnavailableWhileEditingError => 'Not available while editing';
+
+  @override
+  String get commandUnavailableWhileQuotingError => 'Not available while replying';
+
+  @override
+  String get commandUnavailableError => 'Command not available';
+
+  @override
+  String fileTooLargeAfterCompressionError(double limitInMB) =>
+      'The file is too large to upload. '
+      'The file size limit is $limitInMB MB. '
+      'We tried compressing it, but it was not enough.';
+
+  @override
+  String fileTooLargeError(double limitInMB) =>
+      'The file is too large to upload. The file size limit is $limitInMB MB.';
+
+  @override
+  String fileTypeNotSupportedError(String? extension) {
+    if (extension != null) return "'.$extension' files are not supported for upload.";
+    return 'This file type is not supported for upload.';
+  }
+
+  @override
+  String get couldNotReadBytesFromFileError => 'Could not read bytes from file.';
+
+  @override
+  String get addAFileLabel => 'Add a file';
+
+  @override
+  String get photoFromCameraLabel => 'Photo from camera';
+
+  @override
+  String get uploadAFileLabel => 'Upload a file';
+
+  @override
+  String get uploadAPhotoLabel => 'Upload a photo';
+
+  @override
+  String get uploadAVideoLabel => 'Upload a video';
+
+  @override
+  String get videoFromCameraLabel => 'Video from camera';
+
+  @override
+  String get okLabel => 'OK';
+
+  @override
+  String get somethingWentWrongError => 'Something went wrong';
+
+  @override
+  String get connectionErrorTitle => 'No Internet Connection';
+
+  @override
+  String get connectionErrorDescription => 'Please check your internet connection';
+
+  @override
+  String get slowConnectionErrorTitle => 'Slow Internet Connection';
+
+  @override
+  String get slowConnectionErrorDescription => 'There seems to be a problem with your internet connection';
+
+  @override
+  String get genericErrorTitle => 'Error';
+
+  @override
+  String get genericErrorDescription => 'Oops, something went wrong';
+
+  @override
+  String get addMoreFilesLabel => 'Add more';
+
+  @override
+  String get enablePhotoAndVideoAccessMessage =>
+      'Please enable access to your photos'
+      '\nand videos so you can share them with friends.';
+
+  @override
+  String get allowGalleryAccessMessage => 'Allow access to your gallery';
+
+  @override
+  String get flagMessageLabel => 'Flag Message';
+
+  @override
+  String get flagMessageQuestion =>
+      'Do you want to send a copy of this message to a moderator for further investigation?';
+
+  @override
+  String get flagLabel => 'Flag';
+
+  @override
+  String get cancelLabel => 'Cancel';
+
+  @override
+  String get flagMessageSuccessfulLabel => 'Message flagged';
+
+  @override
+  String get flagMessageSuccessfulText => 'The message has been reported to a moderator.';
+
+  @override
+  String get deleteLabel => 'Delete';
+
+  @override
+  String get deleteMessageLabel => 'Delete Message';
+
+  @override
+  String get deleteMessageQuestion => 'Are you sure you want to permanently delete this message?';
+
+  @override
+  String get operationCouldNotBeCompletedText => "The operation couldn't be completed.";
+
+  @override
+  String get replyLabel => 'Reply';
+
+  @override
+  String togglePinUnpinText({required bool pinned}) {
+    if (pinned) return 'Unpin from Conversation';
+    return 'Pin to Conversation';
+  }
+
+  @override
+  String get markAsUnreadLabel => 'Mark Unread';
+
+  @override
+  String unreadCountIndicatorLabel({required int unreadCount}) {
+    return '$unreadCount unread';
+  }
+
+  @override
+  String toggleDeleteRetryDeleteMessageText({required bool isDeleteFailed}) {
+    if (isDeleteFailed) return 'Retry Deleting Message';
+    return 'Delete Message';
+  }
+
+  @override
+  String get copyMessageLabel => 'Copy Message';
+
+  @override
+  String get editMessageLabel => 'Edit Message';
+
+  @override
+  String toggleResendOrResendEditedMessage({required bool isUpdateFailed}) {
+    if (isUpdateFailed) return 'Resend Edited Message';
+    return 'Resend';
+  }
+
+  @override
+  String get photosLabel => 'Photos';
+
+  @override
+  String get photosAndVideosLabel => 'Photos & Videos';
+
+  String _getDay(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+
+    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (date == today) {
+      return 'today';
+    } else if (date == yesterday) {
+      return 'yesterday';
+    } else {
+      return 'on ${Jiffy.parseFromDateTime(date).MMMd}';
+    }
+  }
+
+  @override
+  String sentAtText({required DateTime date, required DateTime time}) {
+    final atTime = Jiffy.parseFromDateTime(time.toLocal());
+    return 'Sent ${_getDay(date)} at ${atTime.jm}';
+  }
+
+  @override
+  String get todayLabel => 'Today';
+
+  @override
+  String get yesterdayLabel => 'Yesterday';
+
+  @override
+  String get justNowLabel => 'Just now';
+
+  @override
+  String get channelIsMutedText => 'Channel is muted';
+
+  @override
+  String get noTitleText => 'No title';
+
+  @override
+  String get letsStartChattingLabel => 'Let’s start chatting!';
+
+  @override
+  String get sendingFirstMessageLabel => 'How about sending your first message to a friend?';
+
+  @override
+  String get startAChatLabel => 'Start a chat';
+
+  @override
+  String get loadingChannelsError => 'Error loading channels';
+
+  @override
+  String get deleteConversationLabel => 'Delete Conversation';
+
+  @override
+  String get deleteConversationQuestion => 'Are you sure you want to delete this conversation?';
+
+  @override
+  String get streamChatLabel => 'Stream Chat';
+
+  @override
+  String get searchingForNetworkText => 'Searching for Network';
+
+  @override
+  String get offlineLabel => 'Offline...';
+
+  @override
+  String get tryAgainLabel => 'Try Again';
+
+  @override
+  String membersCountText(int count) {
+    if (count == 1) return '1 Member';
+    return '$count Members';
+  }
+
+  @override
+  String watchersCountText(int count) {
+    if (count == 1) return '1 Online';
+    return '$count Online';
+  }
+
+  @override
+  String membersCountWithOnlineText({
+    required int memberCount,
+    required int onlineCount,
+  }) {
+    final members = membersCountText(memberCount);
+    if (onlineCount <= 0) return members;
+    return '$members, ${watchersCountText(onlineCount)}';
+  }
+
+  @override
+  String get viewInfoLabel => 'View Info';
+
+  @override
+  String get leaveGroupLabel => 'Leave Group';
+
+  @override
+  String get leaveLabel => 'LEAVE';
+
+  @override
+  String get leaveConversationLabel => 'Leave conversation';
+
+  @override
+  String get leaveConversationQuestion => 'Are you sure you want to leave this conversation?';
+
+  @override
+  String get showInChatLabel => 'Show in Chat';
+
+  @override
+  String get saveImageLabel => 'Save Image';
+
+  @override
+  String get saveVideoLabel => 'Save Video';
+
+  @override
+  String get uploadErrorLabel => 'UPLOAD ERROR';
+
+  @override
+  String get giphyLabel => 'Giphy';
+
+  @override
+  String get shuffleLabel => 'Shuffle';
+
+  @override
+  String get sendLabel => 'Send';
+
+  @override
+  String get withText => 'with';
+
+  @override
+  String get inText => 'in';
+
+  @override
+  String get youText => 'You';
+
+  @override
+  String galleryPaginationText({
+    required int currentPage,
+    required int totalPages,
+  }) => '${currentPage + 1} of $totalPages';
+
+  @override
+  String get fileText => 'File';
+
+  @override
+  String get replyToMessageLabel => 'Reply to Message';
+
+  @override
+  String replyToUserLabel(String userName) => 'Reply to $userName';
+
+  @override
+  String slowModeOnLabel(int cooldownTimeOut) => 'Slow mode, wait ${cooldownTimeOut}s\u2026';
+
+  @override
+  String get commandUsernameLabel => '@username';
+
+  @override
+  String get viewLibrary => 'View library';
+
+  @override
+  String attachmentLimitExceedError(int limit) => """
+Attachment limit exceeded: it's not possible to add more than $limit attachments""";
+
+  @override
+  String get downloadLabel => 'Download';
+
+  @override
+  String toggleMuteUnmuteUserText({required bool isMuted}) {
+    if (isMuted) {
+      return 'Unmute User';
+    } else {
+      return 'Mute User';
+    }
+  }
+
+  @override
+  String toggleBlockUnblockUserText({required bool isBlocked}) {
+    if (isBlocked) return 'Unblock User';
+    return 'Block User';
+  }
+
+  @override
+  String toggleMuteUnmuteGroupQuestion({required bool isMuted}) {
+    if (isMuted) {
+      return 'Are you sure you want to unmute this group?';
+    } else {
+      return 'Are you sure you want to mute this group?';
+    }
+  }
+
+  @override
+  String toggleMuteUnmuteUserQuestion({required bool isMuted}) {
+    if (isMuted) {
+      return 'Are you sure you want to unmute this user?';
+    } else {
+      return 'Are you sure you want to mute this user?';
+    }
+  }
+
+  @override
+  String toggleMuteUnmuteAction({required bool isMuted}) {
+    if (isMuted) {
+      return 'UNMUTE';
+    } else {
+      return 'MUTE';
+    }
+  }
+
+  @override
+  String toggleMuteUnmuteGroupText({required bool isMuted}) {
+    if (isMuted) {
+      return 'Unmute Group';
+    } else {
+      return 'Mute Group';
+    }
+  }
+
+  @override
+  String get linkDisabledDetails => 'Sending links is not allowed in this conversation.';
+
+  @override
+  String get linkDisabledError => 'Links are disabled';
+
+  @override
+  String unreadMessagesSeparatorText() => 'New messages';
+
+  @override
+  String unreadMessagesSeparatorLabel({required int count}) {
+    return Intl.plural(
+      count,
+      one: '$count unread message',
+      other: '$count unread messages',
+      locale: 'en',
+    );
+  }
+
+  @override
+  String get enableFileAccessMessage =>
+      'Please enable access to files'
+      '\nso you can share them with friends.';
+
+  @override
+  String get allowFileAccessMessage => 'Allow access to files';
+
+  @override
+  String get markUnreadError =>
+      'Error marking message unread. Cannot mark unread messages older than the'
+      ' newest 100 channel messages.';
+
+  @override
+  String createPollLabel({bool isNew = false}) {
+    if (isNew) return 'Create a new poll';
+    return 'Create Poll';
+  }
+
+  @override
+  String questionLabel({bool isPlural = false}) {
+    if (isPlural) return 'Questions';
+    return 'Question';
+  }
+
+  @override
+  String get askAQuestionLabel => 'Ask a question';
+
+  @override
+  String? pollQuestionValidationError(int length, Range<int> range) {
+    final (:min, :max) = range;
+
+    // Check if the question is too short.
+    if (min != null && length < min) {
+      return 'Question must be at least $min characters long';
+    }
+
+    // Check if the question is too long.
+    if (max != null && length > max) {
+      return 'Question must be at most $max characters long';
+    }
+
+    return null;
+  }
+
+  @override
+  String optionLabel({bool isPlural = false}) {
+    if (isPlural) return 'Options';
+    return 'Option';
+  }
+
+  @override
+  String get pollOptionEmptyError => 'Option cannot be empty';
+
+  @override
+  String get pollOptionDuplicateError => 'This is already an option';
+
+  @override
+  String get addAnOptionLabel => 'Add an option';
+
+  @override
+  String get multipleAnswersLabel => 'Multiple answers';
+
+  @override
+  String get multipleAnswersDescription => 'Select more than one option';
+
+  @override
+  String get maximumVotesPerPersonLabel => 'Maximum votes per person';
+
+  @override
+  String maximumVotesPerPersonDescription([Range<int>? range]) {
+    final (:min, :max) = range ?? (min: 2, max: 10);
+    return 'Choose between $min\u2013$max options';
+  }
+
+  @override
+  String? maxVotesPerPersonValidationError(int votes, Range<int> range) {
+    final (:min, :max) = range;
+
+    if (min != null && votes < min) {
+      return 'Vote count must be at least $min';
+    }
+
+    if (max != null && votes > max) {
+      return 'Vote count must be at most $max';
+    }
+
+    return null;
+  }
+
+  @override
+  String get anonymousPollLabel => 'Anonymous poll';
+
+  @override
+  String get anonymousPollDescription => 'Hide who voted';
+
+  @override
+  String get pollOptionsLabel => 'Poll Options';
+
+  @override
+  String get suggestAnOptionLabel => 'Suggest an option';
+
+  @override
+  String get suggestAnOptionDescription => 'Let others add options';
+
+  @override
+  String get enterANewOptionLabel => 'Enter a new option';
+
+  @override
+  String get addACommentLabel => 'Add a comment';
+
+  @override
+  String get addACommentDescription => 'Allow others to add comments';
+
+  @override
+  String get pollCommentsLabel => 'Poll Comments';
+
+  @override
+  String get updateYourCommentLabel => 'Update your comment';
+
+  @override
+  String get enterYourCommentLabel => 'Enter your comment';
+
+  @override
+  String get endVoteConfirmationTitle => 'End This Poll?';
+
+  @override
+  String get endVoteConfirmationMessage =>
+      'Do you want to end this poll now? Nobody will be able to vote in this poll anymore.';
+
+  @override
+  String get deletePollOptionLabel => 'Delete Option';
+
+  @override
+  String get deletePollOptionQuestion => 'Are you sure you want to delete this option?';
+
+  @override
+  String get createLabel => 'Create';
+
+  @override
+  String get endLabel => 'End';
+
+  @override
+  String pollVotingModeLabel(PollVotingMode votingMode) {
+    return votingMode.when(
+      disabled: () => 'Vote ended',
+      unique: () => 'Select one',
+      limited: (count) => 'Select up to $count',
+      all: () => 'Select one or more',
+    );
+  }
+
+  @override
+  String seeAllOptionsLabel({int? count}) {
+    if (count == null) return 'See all options';
+    return 'See all $count options';
+  }
+
+  @override
+  String get viewCommentsLabel => 'View Comments';
+
+  @override
+  String get viewResultsLabel => 'View Results';
+
+  @override
+  String get endVoteLabel => 'End Poll';
+
+  @override
+  String get pollResultsLabel => 'Poll Results';
+
+  @override
+  String get pollVotesLabel => 'Votes';
+
+  @override
+  String showAllVotesLabel({int? count}) {
+    if (count == null) return 'Show all votes';
+    return 'Show all $count votes';
+  }
+
+  @override
+  String get viewAllLabel => 'View all';
+
+  @override
+  String voteCountLabel({int? count}) => switch (count) {
+    null || < 1 => '0 votes',
+    1 => '1 vote',
+    _ => '$count votes',
+  };
+
+  @override
+  String totalVoteCountLabel({int? count}) => switch (count) {
+    null || < 1 => '0 votes total',
+    1 => '1 vote total',
+    _ => '$count votes total',
+  };
+
+  @override
+  String get noPollVotesLabel => 'There are no poll votes currently';
+
+  @override
+  String get loadingPollVotesError => 'Error loading poll votes';
+
+  @override
+  String get repliedToLabel => 'replied to:';
+
+  @override
+  String newThreadsLabel({required int count}) {
+    if (count == 1) return '1 new thread';
+    return '$count new threads';
+  }
+
+  @override
+  String get loadingLabel => 'Loading...';
+
+  @override
+  String get slideToCancelLabel => 'Slide to cancel';
+
+  @override
+  String get holdToRecordLabel => 'Hold to record. Release to save.';
+
+  @override
+  String get sendAnywayLabel => 'Send Anyway';
+
+  @override
+  String get moderatedMessageBlockedText => 'Message was blocked by moderation policies';
+
+  @override
+  String get moderationReviewModalTitle => 'Are you sure?';
+
+  @override
+  String get moderationReviewModalDescription =>
+      '''Consider how your comment might make others feel and be sure to follow our Community Guidelines.''';
+
+  @override
+  String get emptyMessagePreviewText => '';
+
+  @override
+  String get voiceRecordingText => 'Voice recording';
+
+  @override
+  String get audioAttachmentText => 'Audio';
+
+  @override
+  String get imageAttachmentText => 'Image';
+
+  @override
+  String get videoAttachmentText => 'Video';
+
+  @override
+  String get fileAttachmentText => 'File';
+
+  @override
+  String get linkAttachmentText => 'Link';
+
+  @override
+  String filesAttachmentCountText(int count) => count == 1 ? 'File' : '$count files';
+
+  @override
+  String photosAttachmentCountText(int count) => count == 1 ? 'Photo' : '$count photos';
+
+  @override
+  String videosAttachmentCountText(int count) => count == 1 ? 'Video' : '$count videos';
+
+  @override
+  String get pollYouVotedText => 'You voted';
+
+  @override
+  String pollSomeoneVotedText(String username) => '$username voted';
+
+  @override
+  String get pollYouCreatedText => 'You created';
+
+  @override
+  String pollSomeoneCreatedText(String username) => '$username created';
+
+  @override
+  String get draftLabel => 'Draft';
+
+  @override
+  String locationLabel({bool isLive = false}) {
+    if (isLive) return 'Live Location';
+    return 'Location';
+  }
+
+  @override
+  String get noConversationsYetText => 'No conversations yet';
+
+  @override
+  String get replyToStartThreadText => 'Reply to a message to start a thread';
+
+  @override
+  String get sendMessageToStartConversationText => 'Send a message to start the conversation';
+
+  @override
+  String get savedForLaterLabel => 'Saved for later';
+
+  @override
+  String get repliedToThreadAnnotationLabel => 'Replied to a thread';
+
+  @override
+  String get alsoSentInChannelAnnotationLabel => 'Also sent in channel';
+
+  @override
+  String get viewLabel => 'View';
+
+  @override
+  String get reminderSetLabel => 'Reminder set';
+
+  @override
+  String reminderAtText(String time) => 'Today at $time';
+
+  @override
+  String get translatedLabel => 'Translated';
+
+  @override
+  String get originalLabel => 'Original';
+
+  @override
+  String get showOriginalLabel => 'Show original';
+
+  @override
+  String get showTranslationLabel => 'Show translation';
+
+  @override
+  String translatedFromLanguageText(String languageCode) => 'Translated from ${_languageName(languageCode)}';
+
+  @override
+  String get createPollPromptLabel => 'Create a poll and let everyone vote!';
+
+  @override
+  String get takePhotoAndShareLabel => 'Take a photo and share';
+
+  @override
+  String get takeVideoAndShareLabel => 'Take a video and share';
+
+  @override
+  String get openCameraLabel => 'Open camera';
+
+  @override
+  String get selectFilesToShareLabel => 'Select files to share';
+
+  @override
+  String get openFilesLabel => 'Open files';
+
+  @override
+  String get unsupportedAttachmentLabel => 'Unsupported Attachment';
+
+  @override
+  String get confirmLabel => 'CONFIRM';
+
+  @override
+  String get emptyReactionsText => 'No reactions yet';
+
+  @override
+  String get loadingReactionsError => 'Error loading reactions';
+
+  @override
+  String get tapToRemoveReactionLabel => 'Tap to remove';
+
+  @override
+  String reactionsCountText(int count) => count == 1 ? '1 Reaction' : '$count Reactions';
+
+  @override
+  String get notifyChannelText => 'Notify everyone in this channel';
+
+  @override
+  String get notifyHereText => 'Notify every online member in this channel';
+
+  @override
+  String notifyRoleText(String role) => 'Notify all $role members';
+
+  @override
+  String scheduledMessageSendAtText({required DateTime scheduledAt}) {
+    final localScheduledAt = scheduledAt.toLocal();
+    final date = DateFormat.MMMEd('en_US').format(localScheduledAt);
+    final time = DateFormat.jm('en_US').format(localScheduledAt);
+    return 'Send $date at $time';
+  }
+
+  @override
+  String get scheduledMessageSendingLabel => 'Sending…';
+
+  @override
+  String get scheduledMessageUploadingLabel => 'Uploading…';
+
+  @override
+  String get scheduledThreadReplyPrefixText => 'Thread reply:';
+
+  @override
+  String scheduledQuoteReplyPrefixText({String? name}) {
+    if (name == null) return 'Reply:';
+    return 'Reply to $name:';
+  }
+
+  @override
+  String scheduledMessageFailureReasonText({
+    ScheduledMessageFailureReason? reason,
+    bool isQuoteDeleted = false,
+  }) {
+    return switch (reason) {
+      .requestFailed => "Couldn't send. Try again",
+      .internalError => 'Something went wrong. Try again',
+      .channelDeleted => 'This channel was deleted',
+      .userDeleted => 'Your account was deleted',
+      .channelFrozen => 'This channel is frozen',
+      .banned => "You can't send messages in this channel",
+      .noPermission => "You're no longer allowed to post here",
+      .moderationBlocked => 'Blocked by moderation',
+      .hookRejected => 'Rejected by the app',
+      .expired => 'Not sent: the service was delayed',
+      .pendingNotSupported => 'This channel now needs approval. Schedule it again.',
+      .invalidMessage when isQuoteDeleted => 'The quoted message was deleted. Edit it to remove the quote.',
+      .invalidMessage => "The message no longer meets the app's limits. Edit it.",
+      _ => 'Something went wrong. Try again',
+    };
+  }
+
+  @override
+  String get noScheduledMessagesText => 'No scheduled messages';
+
+  @override
+  String get loadingScheduledMessagesError => "Couldn't load scheduled messages";
+
+  @override
+  String get editAndRescheduleLabel => 'Edit & Reschedule';
+
+  @override
+  String get rescheduleLabel => 'Reschedule';
+
+  @override
+  String get sendNowLabel => 'Send Now';
+}
+
+// Display name for each language code Stream Chat's translation API
+// supports (`Message.i18n['language']`), for use in
+// `DefaultTranslations.translatedFromLanguageText`. Falls back to the
+// uppercased code itself for anything unrecognized.
+String _languageName(String code) => _languageNames[code] ?? code.toUpperCase();
+
+const _languageNames = <String, String>{
+  'af': 'Afrikaans',
+  'sq': 'Albanian',
+  'am': 'Amharic',
+  'ar': 'Arabic',
+  'az': 'Azerbaijani',
+  'bn': 'Bengali',
+  'bs': 'Bosnian',
+  'bg': 'Bulgarian',
+  'zh': 'Chinese (Simplified)',
+  'zh-TW': 'Chinese (Traditional)',
+  'hr': 'Croatian',
+  'cs': 'Czech',
+  'da': 'Danish',
+  'fa-AF': 'Dari',
+  'nl': 'Dutch',
+  'en': 'English',
+  'et': 'Estonian',
+  'fi': 'Finnish',
+  'fr': 'French',
+  'fr-CA': 'French (Canada)',
+  'ka': 'Georgian',
+  'de': 'German',
+  'el': 'Greek',
+  'ht': 'Haitian Creole',
+  'ha': 'Hausa',
+  'he': 'Hebrew',
+  'hi': 'Hindi',
+  'hu': 'Hungarian',
+  'id': 'Indonesian',
+  'it': 'Italian',
+  'ja': 'Japanese',
+  'ko': 'Korean',
+  'lv': 'Latvian',
+  'lt': 'Lithuanian',
+  'ms': 'Malay',
+  'no': 'Norwegian',
+  'fa': 'Persian',
+  'ps': 'Pashto',
+  'pl': 'Polish',
+  'pt': 'Portuguese',
+  'ro': 'Romanian',
+  'ru': 'Russian',
+  'sr': 'Serbian',
+  'sk': 'Slovak',
+  'sl': 'Slovenian',
+  'so': 'Somali',
+  'es': 'Spanish',
+  'es-MX': 'Spanish (Mexico)',
+  'sw': 'Swahili',
+  'sv': 'Swedish',
+  'tl': 'Tagalog',
+  'ta': 'Tamil',
+  'th': 'Thai',
+  'tr': 'Turkish',
+  'uk': 'Ukrainian',
+  'ur': 'Urdu',
+  'vi': 'Vietnamese',
+};

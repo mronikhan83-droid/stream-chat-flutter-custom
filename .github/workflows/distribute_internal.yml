@@ -1,0 +1,175 @@
+name: distribute_internal
+
+on:
+  push:
+    branches:
+      - master
+      # TODO: Remove once merged to master
+      - v10.0.0
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build (android, ios, or both)'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - android
+          - ios
+          - both
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  determine_platforms:
+    runs-on: ubuntu-latest
+    outputs:
+      run_ios: ${{ steps.set_matrix.outputs.run_ios }}
+      run_android: ${{ steps.set_matrix.outputs.run_android }}
+    steps:
+      - name: Determine platforms to build
+        id: set_matrix
+        run: |
+          # Is this a branch push?
+          is_branch_push="${{ github.event_name == 'push' }}"
+
+          # If it's a branch push, build both platforms
+          if [[ "$is_branch_push" == "true" ]]; then
+            echo "Building all platforms due to branch push"
+            echo "run_ios=true" >> $GITHUB_OUTPUT
+            echo "run_android=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # For manual workflow dispatch, store platform in a variable
+          platform="${{ github.event.inputs.platform }}"
+          echo "Selected platform: $platform"
+
+          # Set outputs only if they should be true
+          [[ "$platform" == "ios" || "$platform" == "both" ]] && echo "run_ios=true" >> $GITHUB_OUTPUT || true
+          [[ "$platform" == "android" || "$platform" == "both" ]] && echo "run_android=true" >> $GITHUB_OUTPUT || true
+
+  android:
+    needs: determine_platforms
+    if: ${{ needs.determine_platforms.outputs.run_android == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: "Git Checkout"
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-flutter
+
+      - uses: ./.github/actions/install-android-ndk
+
+      - name: "Install Tools"
+        uses: ./.github/actions/install-tools
+
+      - name: "Bootstrap Workspace"
+        run: melos bootstrap
+
+      - uses: ./.github/actions/setup-ruby
+
+      - name: Setup Firebase Service Account'
+        working-directory: sample_app/android
+        run: echo "${{ secrets.SAMPLE_FIREBASE_UPLOAD_CREDENTIALS }}" | base64 --decode | jq > ./firebase-service-account.json
+
+      - name: Distribute to Firebase
+        working-directory: sample_app/android
+        run: bundle exec fastlane distribute_to_firebase
+
+  ios:
+    needs: determine_platforms
+    if: ${{ needs.determine_platforms.outputs.run_ios == 'true' }}
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - name: 🔑 Mint Certificates Token
+        id: certs-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.FLUTTER_CI_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.FLUTTER_CI_BOT_PRIVATE_KEY }}
+          # fastlane match only reads the certificates.
+          owner: GetStream
+          repositories: ios-certificates
+          permission-contents: read
+
+      - name: "Git Checkout"
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-xcode
+
+      - uses: ./.github/actions/setup-flutter
+
+      - name: "Install Tools"
+        uses: ./.github/actions/install-tools
+
+      - name: "Bootstrap Workspace"
+        run: melos bootstrap
+
+      - uses: ./.github/actions/setup-ruby
+
+      - name: Setup Firebase Service Account
+        working-directory: sample_app/ios
+        run: echo "${{ secrets.SAMPLE_FIREBASE_UPLOAD_CREDENTIALS }}" | base64 --decode | jq > ./firebase-service-account.json
+
+      - name: Distribute to Firebase
+        working-directory: sample_app/ios
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APPSTORE_API_KEY: ${{ secrets.APPSTORE_API_KEY }}
+          MATCH_GIT_TOKEN: ${{ steps.certs-token.outputs.token }}
+        run: bundle exec fastlane distribute_to_firebase
+
+  ios_testflight:
+    needs: determine_platforms
+    if: ${{ needs.determine_platforms.outputs.run_ios == 'true' }}
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - name: 🔑 Mint Certificates Token
+        id: certs-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.FLUTTER_CI_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.FLUTTER_CI_BOT_PRIVATE_KEY }}
+          # fastlane match only reads the certificates.
+          owner: GetStream
+          repositories: ios-certificates
+          permission-contents: read
+
+      - name: "Git Checkout"
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-xcode
+
+      - uses: ./.github/actions/setup-flutter
+
+      - name: "Install Tools"
+        uses: ./.github/actions/install-tools
+
+      - name: "Bootstrap Workspace"
+        run: melos bootstrap
+
+      - uses: ./.github/actions/setup-ruby
+
+      - name: Distribute to TestFlight Internal
+        working-directory: sample_app/ios
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APPSTORE_API_KEY: ${{ secrets.APPSTORE_API_KEY }}
+          MATCH_GIT_TOKEN: ${{ steps.certs-token.outputs.token }}
+        run: bundle exec fastlane distribute_to_testflight_internal

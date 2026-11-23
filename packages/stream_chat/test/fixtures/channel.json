@@ -1,0 +1,8 @@
+{
+  "id": "test",
+  "type": "livestream",
+  "cid": "livestream:test",
+  "active_member_count": 3,
+  "cats": true,
+  "fruit": ["bananas", "apples"]
+}

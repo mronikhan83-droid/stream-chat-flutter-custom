@@ -1,0 +1,200 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+
+import '../mocks.dart';
+
+void main() {
+  testWidgets(
+    'it should show the image in channel.extraData',
+    (tester) async {
+      final client = MockClient();
+      final clientState = MockClientState();
+      final channel = MockChannel();
+      final channelState = MockChannelState();
+
+      when(() => client.state).thenReturn(clientState);
+      when(() => clientState.currentUser).thenReturn(OwnUser(id: 'user-id'));
+      when(() => channel.state).thenReturn(channelState);
+      when(() => channel.client).thenReturn(client);
+      when(() => channel.nameStream).thenAnswer((_) => Stream.value('test'));
+      when(() => channel.name).thenReturn('test');
+      when(() => channel.imageStream).thenAnswer((i) => Stream.value('https://bit.ly/321RmWb'));
+      when(() => channel.image).thenReturn('https://bit.ly/321RmWb');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StreamChat(
+            client: client,
+            child: StreamChannel(
+              channel: channel,
+              child: Scaffold(
+                body: StreamChannelAvatar(channel: channel),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // wait for the initial state to be rendered.
+      await tester.pumpAndSettle();
+
+      final image = tester.widget<StreamNetworkImage>(find.byType(StreamNetworkImage));
+      expect(image.props.url, 'https://bit.ly/321RmWb');
+    },
+  );
+
+  testWidgets(
+    'it should show the other member image',
+    (tester) async {
+      final client = MockClient();
+      final clientState = MockClientState();
+      final channel = MockChannel();
+      final channelState = MockChannelState();
+
+      when(() => client.state).thenReturn(clientState);
+      when(() => clientState.currentUser).thenReturn(OwnUser(id: 'user-id'));
+      when(() => channel.state).thenReturn(channelState);
+      when(() => channel.client).thenReturn(client);
+      when(() => channel.nameStream).thenAnswer((_) => Stream.value('test'));
+      when(() => channel.name).thenReturn('test');
+      when(() => channel.isDistinct).thenReturn(true);
+      when(() => channel.imageStream).thenAnswer((i) => Stream.value(null));
+      when(() => channel.image).thenReturn(null);
+      when(() => channelState.membersStream).thenAnswer(
+        (i) => Stream.value([
+          Member(
+            userId: 'user-id',
+            user: User(id: 'user-id'),
+          ),
+          Member(
+            userId: 'user-id2',
+            user: User(
+              id: 'user-id2',
+              image: 'testimage',
+            ),
+          ),
+        ]),
+      );
+      when(() => channelState.members).thenReturn([
+        Member(
+          userId: 'user-id2',
+          user: User(
+            id: 'user-id2',
+            image: 'testimage',
+          ),
+        ),
+        Member(
+          userId: 'user-id',
+          user: User(id: 'user-id'),
+        ),
+      ]);
+      when(() => clientState.usersStream).thenAnswer(
+        (i) => Stream.value({
+          'user-id2': User(
+            id: 'user-id2',
+            image: 'testimage',
+          ),
+        }),
+      );
+      when(() => channel.extraData).thenReturn({
+        'name': 'test',
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StreamChat(
+            client: client,
+            child: StreamChannel(
+              channel: channel,
+              child: Scaffold(
+                body: StreamChannelAvatar(channel: channel),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // wait for the initial state to be rendered.
+      await tester.pumpAndSettle();
+
+      final image = tester.widget<StreamNetworkImage>(find.byType(StreamNetworkImage));
+      expect(image.props.url, 'testimage');
+    },
+  );
+
+  testWidgets(
+    'it should use a groupimage if more than 2 members',
+    (tester) async {
+      final client = MockClient();
+      final clientState = MockClientState();
+      final channel = MockChannel();
+      final channelState = MockChannelState();
+      final currentUser = OwnUser(id: 'user-id');
+
+      when(() => client.state).thenReturn(clientState);
+      when(() => clientState.currentUser).thenReturn(currentUser);
+      when(() => channel.state).thenReturn(channelState);
+      when(() => channel.client).thenReturn(client);
+      when(() => channel.isDistinct).thenReturn(false);
+      when(() => channel.nameStream).thenAnswer((_) => Stream.value('test'));
+      when(() => channel.name).thenReturn('test');
+      when(() => channel.imageStream).thenAnswer((i) => Stream.value(null));
+      final members = [
+        Member(
+          userId: 'user-id',
+          user: User(
+            id: 'user-id',
+            image: 'testimage1',
+          ),
+        ),
+        Member(
+          userId: 'user-id2',
+          user: User(
+            id: 'user-id2',
+            image: 'testimage2',
+          ),
+        ),
+        Member(
+          userId: 'user-id3',
+          user: User(
+            id: 'user-id3',
+            image: 'testimage3',
+          ),
+        ),
+      ];
+      when(() => channelState.members).thenReturn(members);
+      when(() => channelState.membersStream).thenAnswer((_) => Stream.value(members));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StreamChat(
+            client: client,
+            child: StreamChannel(
+              channel: channel,
+              child: Scaffold(
+                body: StreamChannelAvatar(channel: channel),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // wait for the initial state to be rendered.
+      await tester.pumpAndSettle();
+
+      // The new StreamChannelAvatar uses StreamUserAvatarGroup internally
+      // for multi-member channels
+      final avatarGroup = find.byType(StreamUserAvatarGroup);
+      expect(avatarGroup, findsOneWidget);
+
+      // Verify user avatars are shown for all members
+      expect(find.byType(StreamUserAvatar), findsNWidgets(members.length));
+    },
+  );
+
+  // Note: The 'selected' parameter has been removed in the redesigned
+  // StreamChannelAvatar component. Selection states should now be handled
+  // at the parent widget level if needed.
+}

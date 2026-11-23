@@ -1,0 +1,324 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:app_badge_plus/app_badge_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+
+import '../auth/auth_controller.dart';
+import '../config/sample_app_config.dart';
+import '../config/sample_app_config_screen.dart';
+import '../routes/routes.dart';
+import '../scheduled_messages/screens/scheduled_messages_screen.dart';
+import '../utils/location_provider.dart';
+import '../utils/platform_support.dart';
+import '../utils/shared_location_service.dart';
+import '../widgets/channel_list.dart';
+import '../widgets/split_view.dart';
+import 'draft_list_page.dart';
+import 'push_preferences_screen.dart';
+import 'reminders_page.dart';
+import 'thread_list_page.dart';
+
+class ChannelListPage extends StatefulWidget {
+  const ChannelListPage({
+    super.key,
+  });
+
+  @override
+  State<ChannelListPage> createState() => _ChannelListPageState();
+}
+
+class _ChannelListPageState extends State<ChannelListPage> {
+  int _currentIndex = 0;
+
+  late final _locationService = SharedLocationService(
+    client: StreamChat.of(context).client,
+    locationProvider: LocationProvider(),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final user = StreamChat.of(context).currentUser;
+    if (user == null) return const Offstage();
+
+    final icons = context.streamIcons;
+    final textTheme = context.streamTextTheme;
+    final colorScheme = context.streamColorScheme;
+
+    final config = context.sampleAppConfig;
+    final isExpanded = AdaptiveSplitView.isExpandedOf(context);
+
+    final allTabs = <_TabDef>[
+      _TabDef(
+        navItem: StreamBottomNavBarItem(
+          icon: StreamUnreadIndicator(child: Icon(icons.messageBubble)),
+          selectedIcon: StreamUnreadIndicator(child: Icon(icons.messageBubbleFill)),
+          label: 'Chats',
+        ),
+        page: const ChannelList(),
+      ),
+      _TabDef(
+        navItem: StreamBottomNavBarItem(
+          icon: StreamUnreadIndicator.threads(child: Icon(icons.thread)),
+          selectedIcon: StreamUnreadIndicator.threads(child: Icon(icons.threadFill)),
+          label: 'Threads',
+        ),
+        page: const ThreadListPage(),
+      ),
+      _TabDef(
+        navItem: const StreamBottomNavBarItem(
+          icon: Icon(Icons.drafts_outlined),
+          selectedIcon: Icon(Icons.drafts_rounded),
+          label: 'Drafts',
+        ),
+        page: const DraftListPage(),
+        enabled: config.draftMessagesEnabled,
+      ),
+      _TabDef(
+        navItem: const StreamBottomNavBarItem(
+          icon: Icon(Icons.bookmark_outline_rounded),
+          selectedIcon: Icon(Icons.bookmark_rounded),
+          label: 'Reminders',
+        ),
+        page: const RemindersPage(),
+        enabled: config.enableReminderActions,
+      ),
+      _TabDef(
+        navItem: StreamBottomNavBarItem(
+          icon: Icon(icons.clock),
+          selectedIcon: Icon(icons.clock),
+          label: 'Scheduled',
+        ),
+        page: const ScheduledMessagesPage(),
+        enabled: config.enableScheduledMessages,
+      ),
+    ];
+
+    final enabledTabs = allTabs.where((t) => t.enabled).toList();
+
+    return StreamScaffold(
+      backgroundColor: colorScheme.backgroundApp,
+      appBar: StreamChannelListHeader(
+        title: Text(enabledTabs[_currentIndex].navItem.label, style: textTheme.headingSm),
+        // Beside the channel, the drawer slides in over both panes.
+        onUserAvatarPressed: isExpanded ? (_) => AdaptiveSplitView.openDrawerOf(context) : null,
+      ),
+      drawer: isExpanded ? null : const LeftDrawer(),
+      // Keep the scaffold's bottom-slot layout in sync with the nav bar's own
+      // surface style, so a nav-bar-only override is applied fully instead of
+      // just partly (the nav bar rendering vs. the scaffold inset).
+      bottomSurfaceStyle: StreamBottomNavBar.resolveSurfaceStyle(context),
+      bottom: StreamBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
+        items: [for (final tab in enabledTabs) tab.navItem],
+      ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [for (final tab in enabledTabs) tab.page],
+      ),
+    );
+  }
+
+  StreamSubscription<int>? badgeListener;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isAppBadgeSupported) {
+      final client = StreamChat.of(context).client;
+      badgeListener = client.state.totalUnreadCountStream.listen((count) {
+        AppBadgePlus.updateBadge(math.max(0, count));
+      });
+    }
+
+    _locationService.initialize();
+  }
+
+  @override
+  void dispose() {
+    badgeListener?.cancel();
+    _locationService.dispose();
+    super.dispose();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tab definition
+// ---------------------------------------------------------------------------
+
+class _TabDef {
+  const _TabDef({
+    required this.navItem,
+    required this.page,
+    this.enabled = true,
+  });
+
+  final StreamBottomNavBarItem navItem;
+  final Widget page;
+  final bool enabled;
+}
+
+class LeftDrawer extends StatelessWidget {
+  const LeftDrawer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = StreamChat.of(context).currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    final colorScheme = context.streamColorScheme;
+    final textTheme = context.streamTextTheme;
+    final icons = context.streamIcons;
+    final spacing = context.streamSpacing;
+    final config = context.sampleAppConfig;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Drawer(
+      shape: const RoundedRectangleBorder(),
+      backgroundColor: colorScheme.backgroundElevation1,
+      child: SafeArea(
+        child: Column(
+          children: [
+            SizedBox(height: spacing.lg),
+
+            // ── Profile header ──
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: spacing.lg),
+              child: Column(
+                children: [
+                  StreamUserAvatar(size: .xxl, user: user, showOnlineIndicator: false),
+                  SizedBox(height: spacing.sm),
+                  Text(
+                    user.name,
+                    style: textTheme.headingMd.copyWith(color: colorScheme.textPrimary),
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: spacing.xxxs),
+                  Text(
+                    '@${user.id}',
+                    style: textTheme.captionDefault.copyWith(color: colorScheme.textTertiary),
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: spacing.lg),
+            Divider(height: 1, indent: spacing.md, endIndent: spacing.md, color: colorScheme.borderSubtle),
+            SizedBox(height: spacing.sm),
+
+            // ── Navigation actions ──
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: spacing.xs),
+              child: Column(
+                children: [
+                  StreamListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: spacing.sm, vertical: spacing.xxxs),
+                    leading: Icon(icons.edit, size: 24),
+                    title: const Text('New direct message'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      GoRouter.of(context).pushNamed(Routes.NEW_CHAT.name);
+                    },
+                  ),
+                  StreamListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: spacing.sm, vertical: spacing.xxxs),
+                    leading: Icon(icons.users, size: 24),
+                    title: const Text('New group'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      GoRouter.of(context).pushNamed(Routes.NEW_GROUP_CHAT.name);
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: spacing.xs),
+            Divider(height: 1, indent: spacing.md, endIndent: spacing.md, color: colorScheme.borderSubtle),
+            SizedBox(height: spacing.xs),
+
+            // ── Settings ──
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: spacing.xs),
+              child: Column(
+                children: [
+                  StreamListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: spacing.sm, vertical: spacing.xxxs),
+                    leading: Icon(icons.bell, size: 24),
+                    title: const Text('Notifications'),
+                    trailing: Icon(icons.chevronRight, size: 20, color: colorScheme.textTertiary),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(builder: (_) => const PushPreferencesScreen()),
+                      );
+                    },
+                  ),
+                  StreamListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: spacing.sm, vertical: spacing.xxxs),
+                    leading: Icon(icons.settings, size: 24),
+                    title: const Text('Configuration'),
+                    trailing: Icon(icons.chevronRight, size: 20, color: colorScheme.textTertiary),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(builder: (_) => const SampleAppConfigScreen()),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const Spacer(),
+
+            // ── Bottom actions ──
+            Divider(height: 1, indent: spacing.md, endIndent: spacing.md, color: colorScheme.borderSubtle),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: spacing.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: StreamListTile(
+                      contentPadding: EdgeInsets.symmetric(horizontal: spacing.sm, vertical: spacing.xxxs),
+                      leading: Icon(icons.leave, size: 24, color: colorScheme.accentError),
+                      title: Text(
+                        'Sign out',
+                        style: textTheme.bodyDefault.copyWith(color: colorScheme.accentError),
+                      ),
+                      titleTextStyle: textTheme.bodyDefault.copyWith(color: colorScheme.accentError),
+                      onTap: () async {
+                        final router = GoRouter.of(context);
+                        await authController.disconnect();
+                        router.goNamed(Routes.CHOOSE_USER.name);
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      isDark ? icons.lightMode : icons.darkMode,
+                      color: colorScheme.textSecondary,
+                    ),
+                    onPressed: () {
+                      final newMode = isDark ? ThemeMode.light : ThemeMode.dark;
+                      SampleAppConfig.update(context, config.copyWith(themeMode: newMode));
+                    },
+                  ),
+                  SizedBox(width: spacing.xxs),
+                ],
+              ),
+            ),
+
+            SizedBox(height: spacing.md),
+          ],
+        ),
+      ),
+    );
+  }
+}

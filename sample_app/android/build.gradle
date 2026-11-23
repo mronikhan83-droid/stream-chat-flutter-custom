@@ -1,0 +1,29 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.layout.buildDirectory = "../build"
+subprojects {
+    project.layout.buildDirectory = rootProject.layout.buildDirectory.dir(project.name)
+
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            // Pin a floor of 36 so AAR metadata checks pass for transitive
+            // dependencies that require it until Flutter's bundled
+            // compileSdkVersion catches up.
+            android.compileSdkVersion = Math.max(flutter.compileSdkVersion, 36)
+        }
+    }
+
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.layout.buildDirectory
+}

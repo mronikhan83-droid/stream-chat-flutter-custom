@@ -1,0 +1,824 @@
+import 'dart:io';
+import 'dart:math';
+
+import 'package:collection/collection.dart';
+import 'package:diacritic/diacritic.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_size_getter/file_input.dart'; // For compatibility with flutter web.
+import 'package:image_size_getter/image_size_getter.dart' hide Size;
+
+import '../../stream_chat_flutter.dart';
+import '../audio/audio_playlist_state.dart';
+import '../localization/translations.dart';
+
+int _byteUnitConversionFactor = 1024;
+
+/// int extensions
+extension IntExtension on int {
+  /// Parses int in bytes to human readable size. Like: 17 KB
+  /// instead of 17524 bytes;
+  String toHumanReadableSize() {
+    if (this <= 0) return '0 B';
+    const suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    final i = (log(this) / log(_byteUnitConversionFactor)).floor();
+    final numberValue = (this / pow(_byteUnitConversionFactor, i)).toStringAsFixed(2);
+    final suffix = suffixes[i];
+    return '$numberValue $suffix';
+  }
+}
+
+/// Durations extensions.
+extension DurationExtension on Duration {
+  /// Transforms Duration to a minutes and seconds time. Like: 04:13.
+  String toMinutesAndSeconds() {
+    final minutes = inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = inSeconds.remainder(60).toString().padLeft(2, '0');
+
+    return '$minutes:$seconds';
+  }
+}
+
+/// String extension
+extension StringExtension on String {
+  /// Returns the capitalized string
+  @Deprecated('Use sentenceCase instead')
+  String capitalize() => sentenceCase;
+
+  /// Returns the string in sentence case.
+  ///
+  /// Example: 'hello WORLD' -> 'Hello world'
+  String get sentenceCase {
+    if (isEmpty) return this;
+
+    final firstChar = this[0].toUpperCase();
+    final restOfString = substring(1).toLowerCase();
+
+    return '$firstChar$restOfString';
+  }
+
+  /// Returns the biggest line of a text.
+  String biggestLine() {
+    if (contains('\n')) {
+      return split('\n').reduce((curr, next) => curr.length > next.length ? curr : next);
+    } else {
+      return this;
+    }
+  }
+
+  /// Returns the initials of a string.
+  String? get initials {
+    final parts = split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+
+    if (parts.isEmpty) return null;
+
+    var initials = parts[0].characters.first.toUpperCase();
+    if (parts.length > 1) initials += parts[1].characters.first.toUpperCase();
+
+    return initials;
+  }
+
+  /// Returns whether the string contains only emoji's or not.
+  ///
+  ///  Emojis guidelines
+  ///  1 to 3 emojis: big size with no text bubble.
+  ///  4+ emojis or emojis+text: standard size with text bubble.
+  bool get isOnlyEmoji {
+    final trimmedString = trim();
+    if (trimmedString.isEmpty) return false;
+    if (trimmedString.characters.length > 3) return false;
+    final emojiRegex = RegExp(
+      r'^(\u00a9|\u00ae|\u200d|[\ufe00-\ufe0f]|[\u2600-\u27FF]|[\u2300-\u2bFF]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])+$',
+      multiLine: true,
+      caseSensitive: false,
+    );
+    return emojiRegex.hasMatch(trimmedString);
+  }
+
+  /// Removes accents and diacritics from the given String.
+  String get diacriticsInsensitive => removeDiacritics(this);
+
+  /// Levenshtein distance between this and [t].
+  int levenshteinDistance(String t) => levenshtein(this, t);
+}
+
+/// List extension
+extension IterableExtension<T> on Iterable<T> {
+  /// Insert any item<T> inBetween the list items
+  List<T> insertBetween(T item) => expand((e) sync* {
+    yield item;
+    yield e;
+  }).skip(1).toList(growable: false);
+}
+
+/// Useful extension for [PlatformFile]
+extension PlatformFileX on PlatformFile {
+  /// Converts the [PlatformFile] into [AttachmentFile]
+  Future<AttachmentFile> get toAttachmentFile => xFile.toAttachmentFile;
+
+  /// Converts the [PlatformFile] to a [Attachment].
+  Future<Attachment> toAttachment({required String type}) => xFile.toAttachment(type: type);
+}
+
+/// Useful extension for [XFile]
+extension XFileX on XFile {
+  /// Converts the [PlatformFile] into [AttachmentFile]
+  Future<AttachmentFile> get toAttachmentFile async {
+    final bytes = await readAsBytes();
+    return AttachmentFile(
+      // Path is not supported on web.
+      path: CurrentPlatform.isWeb ? null : path,
+      name: name,
+      size: bytes.length,
+      bytes: bytes,
+    );
+  }
+
+  /// Converts the [XFile] to a [Attachment].
+  Future<Attachment> toAttachment({required String type}) async {
+    final file = await toAttachmentFile;
+
+    final extraDataMap = <String, Object>{};
+
+    final mimeType = this.mimeType ?? file.mediaType?.mimeType;
+
+    if (mimeType != null) {
+      extraDataMap['mime_type'] = mimeType;
+    }
+
+    extraDataMap['file_size'] = file.size!;
+
+    final attachment = Attachment(
+      file: file,
+      type: type,
+      extraData: extraDataMap,
+    );
+
+    return attachment;
+  }
+}
+
+/// Extension on [InputDecoration]
+extension InputDecorationX on InputDecoration {
+  /// Merges this [InputDecoration] with the [other]
+  InputDecoration merge(InputDecoration? other) {
+    if (other == null) return this;
+    return copyWith(
+      icon: other.icon,
+      labelText: other.labelText,
+      labelStyle: labelStyle?.merge(other.labelStyle) ?? other.labelStyle,
+      helperText: other.helperText,
+      helperStyle: helperStyle?.merge(other.helperStyle) ?? other.helperStyle,
+      helperMaxLines: other.helperMaxLines,
+      hintText: other.hintText,
+      hintStyle: hintStyle?.merge(other.hintStyle) ?? other.hintStyle,
+      hintTextDirection: other.hintTextDirection,
+      hintMaxLines: other.hintMaxLines,
+      errorText: other.errorText,
+      errorStyle: errorStyle?.merge(other.errorStyle) ?? other.errorStyle,
+      errorMaxLines: other.errorMaxLines,
+      floatingLabelBehavior: other.floatingLabelBehavior,
+      isCollapsed: other.isCollapsed,
+      isDense: other.isDense,
+      contentPadding: other.contentPadding,
+      prefixIcon: other.prefixIcon,
+      prefix: other.prefix,
+      prefixText: other.prefixText,
+      prefixIconConstraints: other.prefixIconConstraints,
+      prefixStyle: prefixStyle?.merge(other.prefixStyle) ?? other.prefixStyle,
+      suffixIcon: other.suffixIcon,
+      suffix: other.suffix,
+      suffixText: other.suffixText,
+      suffixStyle: suffixStyle?.merge(other.suffixStyle) ?? other.suffixStyle,
+      suffixIconConstraints: other.suffixIconConstraints,
+      counter: other.counter,
+      counterText: other.counterText,
+      counterStyle: counterStyle?.merge(other.counterStyle) ?? other.counterStyle,
+      filled: other.filled,
+      fillColor: other.fillColor,
+      focusColor: other.focusColor,
+      hoverColor: other.hoverColor,
+      errorBorder: other.errorBorder,
+      focusedBorder: other.focusedBorder,
+      focusedErrorBorder: other.focusedErrorBorder,
+      disabledBorder: other.disabledBorder,
+      enabledBorder: other.enabledBorder,
+      border: other.border,
+      enabled: other.enabled,
+      semanticCounterText: other.semanticCounterText,
+      alignLabelWithHint: other.alignLabelWithHint,
+    );
+  }
+}
+
+/// Gets text scale factor through context
+extension BuildContextX on BuildContext {
+  // ignore: public_member_api_docs
+  double get textScaleFactor =>
+      // ignore: deprecated_member_use
+      MediaQuery.maybeOf(this)?.textScaleFactor ?? 1.0;
+
+  /// Retrieves current translations according to locale
+  /// Defaults to [DefaultTranslations]
+  Translations get translations => StreamChatLocalizations.of(this) ?? DefaultTranslations.instance;
+}
+
+/// Extension on [BorderRadius]
+extension FlipBorder on BorderRadius {
+  /// Flips borders (Y)
+  BorderRadius mirrorBorderIfReversed({bool reverse = true}) => reverse
+      ? BorderRadius.only(
+          topLeft: topRight,
+          topRight: topLeft,
+          bottomLeft: bottomRight,
+          bottomRight: bottomLeft,
+        )
+      : this;
+}
+
+/// Extension on [IconButton]
+extension IconButtonX on IconButton {
+  /// Creates a copy of [IconButton] with specified attributes overridden.
+  IconButton copyWith({
+    double? iconSize,
+    VisualDensity? visualDensity,
+    EdgeInsetsGeometry? padding,
+    AlignmentGeometry? alignment,
+    double? splashRadius,
+    Color? color,
+    Color? focusColor,
+    Color? hoverColor,
+    Color? highlightColor,
+    Color? splashColor,
+    Color? disabledColor,
+    void Function()? onPressed,
+    MouseCursor? mouseCursor,
+    FocusNode? focusNode,
+    bool? autofocus,
+    String? tooltip,
+    bool? enableFeedback,
+    BoxConstraints? constraints,
+    Widget? icon,
+  }) {
+    return IconButton(
+      iconSize: iconSize ?? this.iconSize,
+      visualDensity: visualDensity ?? this.visualDensity,
+      padding: padding ?? this.padding,
+      alignment: alignment ?? this.alignment,
+      splashRadius: splashRadius ?? this.splashRadius,
+      color: color ?? this.color,
+      focusColor: focusColor ?? this.focusColor,
+      hoverColor: hoverColor ?? this.hoverColor,
+      highlightColor: highlightColor ?? this.highlightColor,
+      splashColor: splashColor ?? this.splashColor,
+      disabledColor: disabledColor ?? this.disabledColor,
+      onPressed: onPressed ?? this.onPressed,
+      mouseCursor: mouseCursor ?? this.mouseCursor,
+      focusNode: focusNode ?? this.focusNode,
+      autofocus: autofocus ?? this.autofocus,
+      tooltip: tooltip ?? this.tooltip,
+      enableFeedback: enableFeedback ?? this.enableFeedback,
+      constraints: constraints ?? this.constraints,
+      icon: icon ?? this.icon,
+    );
+  }
+}
+
+/// Extensions on List<User>
+extension UserListX on List<User> {
+  /// It does an search on a list of [User] and returns users with
+  /// `id` or `name` containing the [query].
+  ///
+  /// Results are returned sorted by their edit distance from the
+  /// searched string, distance is calculated using the [levenshtein] algorithm.
+  @Deprecated(
+    'This extension is no longer used by the SDK and will be removed in a '
+    'future major release.',
+  )
+  List<User> search(String query) {
+    String normalize(String input) => input.toLowerCase().diacriticsInsensitive;
+
+    final normalizedQuery = normalize(query);
+
+    final matchingUsers = <User, int>{}; // User:lDistance
+
+    for (final user in this) {
+      final normalizedId = normalize(user.id);
+      final normalizedUserName = normalize(user.name);
+      final lDistance = normalizedUserName.levenshteinDistance(normalizedQuery);
+      final containsId = normalizedId.contains(normalizedQuery);
+      final containsName = normalizedUserName.contains(normalizedQuery);
+      if (lDistance < 3 || containsId || containsName) {
+        matchingUsers[user] = lDistance;
+      }
+    }
+
+    final entries = matchingUsers.entries.toList(growable: false)
+      ..sort((prev, curr) {
+        bool containsQuery(User user) =>
+            normalize(user.id).contains(normalizedQuery) || normalize(user.name).contains(normalizedQuery);
+
+        final containsInPrev = containsQuery(prev.key);
+        final containsInCurr = containsQuery(curr.key);
+
+        if (containsInPrev && !containsInCurr) {
+          return -1;
+        } else if (!containsInPrev && containsInCurr) {
+          return 1;
+        }
+        return prev.value.compareTo(curr.value);
+      });
+
+    return entries.map((e) => e.key).toList(growable: false);
+  }
+}
+
+/// Extensions on Message
+extension MessageX on Message {
+  /// Wraps mention substrings in the message text with markdown so the
+  /// renderer can style and dispatch taps by mention kind.
+  ///
+  /// Covers all mention sources:
+  /// `mentionedChannel` / `mentionedHere`, `mentionedGroups`, `mentionedRoles`,
+  /// `mentionedUsers`. The user-mention output keeps the bare `mention:`
+  /// scheme so callers consuming `replaceMentions().text` or wiring up
+  /// `onTapMention` keep working unchanged; channel / here / role / group
+  /// mentions use the qualified `mention-<type>:` schemes parsed by
+  /// `_StreamMentionSyntax`.
+  ///
+  /// When [linkify] is false, mention substrings are still replaced with the
+  /// resolved display names but the markdown wrapper is omitted — used by
+  /// the preview/quoted-reply formatter.
+  Message replaceMentions({bool linkify = true}) {
+    final initial = text;
+    if (initial == null || initial.isEmpty) return this;
+
+    String wrap(String displayName, StreamMentionType type, String id) {
+      if (!linkify) return '@$displayName';
+      final scheme = type == .user ? kStreamMentionScheme : '$kStreamMentionScheme-$type';
+      return '[@$displayName]($scheme:$id)';
+    }
+
+    // When two sources share a literal, the first one registered wins.
+    final replacements = <String, String>{};
+    void register(String literal, String replacement) {
+      replacements.putIfAbsent(literal, () => replacement);
+    }
+
+    if (mentionedChannel ?? false) {
+      const channel = StreamMentionType.channel;
+      register(channel, wrap(channel, .channel, channel));
+    }
+    if (mentionedHere ?? false) {
+      const here = StreamMentionType.here;
+      register(here, wrap(here, .here, here));
+    }
+
+    for (final group in mentionedGroups ?? const <UserGroup>[]) {
+      final replacement = wrap(group.name, .group, group.id);
+      register(group.id, replacement);
+      register(group.name, replacement);
+    }
+
+    for (final role in mentionedRoles ?? const <String>[]) {
+      register(role, wrap(role, .role, role));
+    }
+
+    // User-mention emission uses the bare `mention:` scheme (unchanged from
+    // before enhanced mentions existed) so existing consumer code stays
+    // compatible.
+    for (final user in mentionedUsers.toSet()) {
+      final replacement = wrap(user.name, .user, user.id);
+      register(user.id, replacement);
+      register(user.name, replacement);
+    }
+
+    if (replacements.isEmpty) return this;
+
+    // Replace every mention in a single pass, trying the longest literal
+    // first, so `@Ann` can't claim the start of `@Anna` when both are
+    // mentioned. The negative lookbehind on `[` leaves an already-wrapped
+    // `[@name](...)` in the text untouched.
+    final literals = replacements.keys.toList()..sort((a, b) => b.length.compareTo(a.length));
+    final pattern = RegExp('(?<!\\[)@(${literals.map(RegExp.escape).join('|')})');
+    final replaced = initial.replaceAllMapped(pattern, (match) => replacements[match[1]]!);
+
+    return copyWith(text: replaced);
+  }
+
+  /// Returns an approximation of message size
+  double roughMessageSize(double? fontSize) {
+    var messageTextLength = min(text?.biggestLine().length ?? 0, 65);
+
+    if (quotedMessage != null) {
+      var quotedMessageLength = (min(quotedMessage!.text?.biggestLine().length ?? 0, 65)) + 8;
+
+      if (quotedMessage!.attachments.isNotEmpty) {
+        quotedMessageLength += 8;
+      }
+
+      if (quotedMessageLength > messageTextLength * 1.2) {
+        messageTextLength = quotedMessageLength;
+      }
+    }
+
+    // Quoted message have a smaller font, so it is necessary to reduce the
+    // size of the multiplier to count for the smaller font.
+    var multiplier = 0.55;
+    if (quotedMessage != null) {
+      multiplier = 0.45;
+    }
+
+    return messageTextLength * (fontSize ?? 1) * multiplier;
+  }
+
+  /// The language this message was written in, as reported by Stream's
+  /// auto-translation API, or `null` when it is unknown.
+  ///
+  /// An ISO 639-1 code, optionally with a regional suffix (e.g. `zh-TW`).
+  String? get originalLanguage => _sourceLanguageOf(i18n);
+
+  /// It returns the translation of this message into [language], or `null`
+  /// when there is none available locally.
+  ///
+  /// Returns `null` when [language] is the message's [originalLanguage]:
+  /// Stream echoes a self-referential entry for the language a message was
+  /// written in (e.g. `es_text` on a Spanish message), so an entry existing
+  /// on its own doesn't mean there is anything to translate. The comparison
+  /// is case-insensitive, as [User.language] is set by the app.
+  ///
+  /// Returns `null` when [language] is `null` or empty — Stream's API
+  /// defaults [User.language] to `''` rather than omitting it, so both are
+  /// treated as "no language to translate to".
+  String? translatedText(String? language) => _translationOf(i18n, language);
+
+  /// Whether this message has a translation into [language] available
+  /// locally, either of its own text ([translatedText]) or of its [poll]
+  /// ([PollTranslationX.hasTranslation]).
+  ///
+  /// Follows the same rules as [translatedText] for the text and the poll
+  /// each: a part has no translation into [language] when [language] is
+  /// `null`, empty, or the language that part was written in.
+  bool hasTranslation(String? language) {
+    if (translatedText(language) != null) return true;
+    return poll?.hasTranslation(language) ?? false;
+  }
+
+  /// It returns the message with the translated text if available locally.
+  ///
+  /// Returns the message unchanged when [translatedText] has no translation
+  /// into [language].
+  Message translate(String? language) => switch (translatedText(language)) {
+    null => this,
+    final translatedText => copyWith(text: translatedText),
+  };
+
+  /// It returns the message replacing the mentioned user names with
+  ///  the respective user ids
+  Message replaceMentionsWithId() {
+    if (mentionedUsers.isEmpty) return this;
+
+    var messageTextToSend = text;
+    if (messageTextToSend == null) return this;
+
+    for (final user in mentionedUsers.toSet()) {
+      final userName = user.name;
+      messageTextToSend = messageTextToSend!.replaceAll(
+        '@$userName',
+        '@${user.id}',
+      );
+    }
+
+    return copyWith(text: messageTextToSend);
+  }
+}
+
+// The language the text behind a server-provided translation map was written
+// in, or `null` when it is unknown.
+String? _sourceLanguageOf(Map<String, String>? i18n) => switch (i18n?['language']) {
+  null || '' => null,
+  final language => language,
+};
+
+// The translation into [language] held by a server-provided translation map
+// (`{'language': 'en', 'nl_text': '…'}`), or `null` when there is none.
+//
+// Stream echoes a self-referential entry for the source language, and
+// defaults `User.language` to `''` — neither is something to translate to.
+String? _translationOf(Map<String, String>? i18n, String? language) {
+  if (language == null || language.isEmpty) return null;
+  if (language.toLowerCase() == _sourceLanguageOf(i18n)?.toLowerCase()) return null;
+  return i18n?['${language}_text'];
+}
+
+/// Translation helpers for a [Poll] sent to a channel with automatic
+/// translation enabled.
+///
+/// Every lookup follows the same rules as [MessageX.translatedText]: `null`
+/// when `language` is `null` or empty, or when it is the language the text
+/// was written in.
+extension PollTranslationX on Poll {
+  /// The language this poll was written in, as reported by Stream's
+  /// auto-translation API, or `null` when it is unknown.
+  String? get originalLanguage {
+    if (_sourceLanguageOf(nameI18n) case final language?) return language;
+    if (_sourceLanguageOf(descriptionI18n) case final language?) return language;
+    return options.map((it) => _sourceLanguageOf(it.textI18n)).nonNulls.firstOrNull;
+  }
+
+  /// The translation of [Poll.name] into [language], or `null` when there is
+  /// none available locally.
+  String? translatedName(String? language) => _translationOf(nameI18n, language);
+
+  /// The translation of [Poll.description] into [language], or `null` when
+  /// there is none available locally.
+  String? translatedDescription(String? language) => _translationOf(descriptionI18n, language);
+
+  /// Whether this poll's name or any of its options has a translation into
+  /// [language].
+  ///
+  /// The description and the answers are not included: the poll attachment
+  /// doesn't show the description, and each answer is written by a different
+  /// user, often in a different language than the poll itself.
+  bool hasTranslation(String? language) {
+    if (translatedName(language) != null) return true;
+    return options.any((it) => it.translatedText(language) != null);
+  }
+}
+
+/// Translation helpers for a [PollOption] of a poll sent to a channel with
+/// automatic translation enabled.
+extension PollOptionTranslationX on PollOption {
+  /// The translation of [PollOption.text] into [language], or `null` when
+  /// there is none available locally.
+  ///
+  /// Follows the same rules as [MessageX.translatedText].
+  String? translatedText(String? language) => _translationOf(textI18n, language);
+}
+
+/// Translation helpers for a [PollVote] of a poll sent to a channel with
+/// automatic translation enabled.
+extension PollVoteTranslationX on PollVote {
+  /// The translation of [PollVote.answerText] into [language], or `null` when
+  /// there is none available locally.
+  ///
+  /// Follows the same rules as [MessageX.translatedText].
+  String? translatedAnswerText(String? language) => _translationOf(answerTextI18n, language);
+}
+
+/// Extensions on [Uri]
+extension UriX on Uri {
+  /// Return the URI adding the http scheme if it is missing
+  Uri get withScheme {
+    if (hasScheme) return this;
+    return Uri.parse('http://${toString()}');
+  }
+}
+
+/// Extensions on generic type [T]
+extension TypeX<T> on T? {
+  /// Returns true if the value is null or matches the given [value]
+  /// otherwise returns false.
+  bool isNullOrMatches(T value) => this == null || this == value;
+}
+
+/// Useful extensions on [FileType]
+extension FileTypeX on FileType {
+  /// Converts the [FileType] to a [String].
+  String toAttachmentType() {
+    return switch (this) {
+      FileType.image => AttachmentType.image,
+      FileType.video => AttachmentType.video,
+      FileType.audio => AttachmentType.audio,
+      FileType.any || FileType.media || FileType.custom => AttachmentType.file,
+    };
+  }
+}
+
+/// Useful extensions on [AttachmentPickerType]
+extension AttachmentPickerTypeX on AttachmentPickerType {
+  /// Converts the [AttachmentPickerType] to a [FileType].
+  FileType get fileType {
+    return switch (this) {
+      ImagesPickerType() => FileType.image,
+      VideosPickerType() => FileType.video,
+      AudiosPickerType() => FileType.audio,
+      FilesPickerType() => FileType.any,
+      _ => throw Exception(
+        'Unsupported AttachmentPickerType: $this. '
+        'Only Images, Videos, Audios and Files are supported.',
+      ),
+    };
+  }
+}
+
+/// Useful extensions on [BoxConstraints].
+extension ConstraintsX on BoxConstraints {
+  /// Returns new box constraints that tightens the max width and max height
+  /// to the given [size].
+  BoxConstraints tightenMaxSize(Size? size) {
+    if (size == null) return this;
+    return copyWith(
+      maxWidth: clampDouble(size.width, minWidth, maxWidth),
+      maxHeight: clampDouble(size.height, minHeight, maxHeight),
+    );
+  }
+}
+
+/// Useful extensions on [Attachment].
+extension OriginalSizeX on Attachment {
+  /// Returns the size of the attachment if it is an image or giffy.
+  /// Otherwise, returns null.
+  Size? get originalSize {
+    // Return null if the attachment is not an image or giffy.
+    if (type != AttachmentType.image && type != AttachmentType.giphy) {
+      return null;
+    }
+
+    // Calculate size locally if the attachment is not uploaded yet.
+    final file = this.file;
+    if (file != null) {
+      ImageInput? input;
+      if (file.bytes != null) {
+        input = MemoryInput(file.bytes!);
+      } else if (file.path != null) {
+        input = FileInput(File(file.path!));
+      }
+
+      // Return null if the file does not contain enough information.
+      if (input == null) return null;
+
+      try {
+        final size = ImageSizeGetter.getSizeResult(input).size;
+        if (size.needRotate) {
+          return Size(size.height.toDouble(), size.width.toDouble());
+        }
+        return Size(size.width.toDouble(), size.height.toDouble());
+      } catch (e, stk) {
+        debugPrint('Error getting image size: $e\n$stk');
+        return null;
+      }
+    }
+
+    // Otherwise, use the size provided by the server.
+    final width = originalWidth;
+    final height = originalHeight;
+    if (width == null || height == null) return null;
+    return Size(width.toDouble(), height.toDouble());
+  }
+}
+
+/// Useful extensions on [List<Message>].
+extension MessageListX on Iterable<Message> {
+  /// Returns the last unread message in the list.
+  /// Returns null if the list is empty or the userRead is null.
+  ///
+  /// The [userRead] is the last read message by the user.
+  ///
+}
+
+/// Useful extensions on [ChannelModel].
+extension ChannelModelX on ChannelModel {
+  /// Returns the channel name if exists, or a formatted name based on the
+  /// members of the channel and the [maxMembers] allowed.
+  String? formatName({
+    User? currentUser,
+    int maxMembers = 2,
+  }) {
+    // If there's an assigned name and it's not empty, we use it.
+    if (name case final name? when name.isNotEmpty) return name;
+
+    // If there are no members, we return null.
+    final members = this.members;
+    if (members == null) return null;
+
+    final otherMembers = members.where((it) => it.userId != currentUser?.id);
+
+    // If there are no other members, we return the name of the current user.
+    if (otherMembers.isEmpty) return currentUser?.name;
+
+    // Otherwise, we return the names of the first `maxMembers` members sorted
+    // alphabetically, followed by the number of remaining members if there are
+    // more than `maxMembers` members.
+    final memberNames = otherMembers.map((it) => it.user?.name).whereType<String>().take(maxMembers).sorted();
+
+    return switch (otherMembers.length <= maxMembers) {
+      true => memberNames.join(', '),
+      false => '${memberNames.join(', ')} + ${otherMembers.length - maxMembers}',
+    };
+  }
+}
+
+/// {@template voiceRecordingAttachmentExtension}
+/// Extension on [Attachment] to provide the voice recording attachment specific
+/// properties.
+/// {@endtemplate}
+extension VoiceRecordingAttachmentExtension on Attachment {
+  /// Returns the duration of the voice recording attachment if available else
+  /// returns [Duration.zero].
+  Duration get duration {
+    final duration = extraData['duration'] as num?;
+    if (duration == null) return Duration.zero;
+
+    return Duration(milliseconds: (duration * 1000).round());
+  }
+
+  /// Returns the waveform data of the voice recording attachment if available
+  /// else returns an empty list.
+  List<double> get waveform {
+    final waveform = extraData['waveform_data'] as List<dynamic>?;
+    if (waveform == null) return [];
+
+    return [...waveform.map((e) => double.tryParse(e.toString())).nonNulls];
+  }
+}
+
+/// {@template singleAttachmentPlaylistExtension}
+/// Extension on [Attachment] to provide the playlist specific
+/// properties.
+/// {@endtemplate}
+extension SingleAttachmentPlaylistExtension on Attachment {
+  /// Converts the attachment to a list of [PlaylistTrack].
+  List<PlaylistTrack> toPlaylist() => [this].toPlaylist();
+}
+
+/// {@template attachmentPlaylistExtension}
+/// Extension on [Iterable<Attachment>] to provide the playlist specific
+/// properties.
+/// {@endtemplate}
+extension AttachmentPlaylistExtension on Iterable<Attachment> {
+  /// Converts the list of attachments to a list of [PlaylistTrack].
+  List<PlaylistTrack> toPlaylist() {
+    return [
+      ...map((it) {
+        final uri = switch (it.uploadState) {
+          Preparing() || InProgress() || Failed() => () {
+            if (CurrentPlatform.isWeb) {
+              final bytes = it.file?.bytes;
+              final mimeType = it.file?.mediaType?.mimeType;
+              if (bytes == null || mimeType == null) return null;
+
+              return Uri.dataFromBytes(bytes, mimeType: mimeType);
+            }
+
+            final path = it.file?.path;
+            if (path == null) return null;
+
+            return Uri.file(path, windows: CurrentPlatform.isWindows);
+          }(),
+          Success() => () {
+            final url = it.assetUrl;
+            if (url == null) return null;
+
+            return Uri.tryParse(url);
+          }(),
+        };
+
+        if (uri == null) return null;
+
+        return PlaylistTrack(
+          uri: uri,
+          title: it.title,
+          waveform: it.waveform,
+          duration: it.duration,
+          key: it,
+        );
+      }).nonNulls,
+    ];
+  }
+}
+
+/// Adapts an [Offset] for the current [TextDirection].
+extension OffsetDirectionalX on Offset {
+  /// Flips [dx] for RTL so a positive offset always means "toward trailing."
+  Offset directional([TextDirection? textDirection]) {
+    if (textDirection == null || textDirection == TextDirection.ltr) return this;
+    return Offset(-dx, dy);
+  }
+}
+
+/// Extension to convert [AlignmentGeometry] to the corresponding
+/// [CrossAxisAlignment].
+extension ColumnAlignmentExtension on AlignmentGeometry {
+  /// Converts an [AlignmentGeometry] to the most appropriate
+  /// [CrossAxisAlignment] value.
+  CrossAxisAlignment toColumnCrossAxisAlignment() {
+    final x = switch (this) {
+      Alignment(x: final x) => x,
+      AlignmentDirectional(start: final start) => start,
+      _ => null,
+    };
+
+    // If the alignment is unknown, fallback to the center alignment.
+    if (x == null) return CrossAxisAlignment.center;
+
+    return switch (x) {
+      0.0 => CrossAxisAlignment.center,
+      < 0 => CrossAxisAlignment.start,
+      > 0 => CrossAxisAlignment.end,
+      _ => CrossAxisAlignment.center, // fallback (in case of NaN etc)
+    };
+  }
+}

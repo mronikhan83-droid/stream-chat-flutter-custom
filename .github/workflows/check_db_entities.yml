@@ -1,0 +1,84 @@
+name: check_db_entities
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Fork pull requests get a read-only token: they skip the comment and read
+# the suggested change in the job summary instead.
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  # Centralizes every gating decision for this workflow — currently just a
+  # path filter. Downstream jobs only need a single
+  # `if: needs.gate.outputs.should_run == 'true'`. A job skipped this way
+  # reports `success` to branch protection (vs. `on.paths` filtering, which
+  # hangs forever) — see
+  # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.filter.outputs.persistence }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+
+      - name: 🛤️ Detect Path Changes
+        uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            persistence:
+              - 'packages/stream_chat_persistence/**'
+              - '.github/workflows/check_db_entities.yml'
+
+  check_entity_modifications:
+    needs: gate
+    if: needs.gate.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: 🔎 Check DB Entity Changes
+        id: check_entities
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: ./.github/workflows/scripts/check-db-entities.sh
+
+      - name: 📝 Write Job Summary
+        if: steps.check_entities.outputs.has_changes == 'true'
+        run: cat comment_body.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🔍 Find Comment
+        if: steps.check_entities.outputs.has_changes == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: peter-evans/find-comment@v4
+        id: find_comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: Database Entity Files Modified
+
+      - name: 💬 Create or Update Comment
+        if: steps.check_entities.outputs.has_changes == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: comment_body.md
+          edit-mode: replace
+
+      - name: 🚨 Enforce schema version bump
+        if: steps.check_entities.outputs.has_changes == 'true' && steps.check_entities.outputs.version_bumped == 'false'
+        run: |
+          echo "::error file=packages/stream_chat_persistence/lib/src/db/drift_chat_database.dart::Database entity files were modified but \`schemaVersion\` was not bumped. See the job summary for the suggested change."
+          exit 1

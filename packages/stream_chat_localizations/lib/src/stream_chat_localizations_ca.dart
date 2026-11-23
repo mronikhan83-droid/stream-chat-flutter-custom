@@ -1,0 +1,1345 @@
+// ignore_for_file: lines_longer_than_80_chars
+
+part of 'stream_chat_localizations.dart';
+
+/// The translations for Catalan (`ca`).
+class StreamChatLocalizationsCa extends GlobalStreamChatLocalizations {
+  /// Create an instance of the translation bundle for Catalan.
+  const StreamChatLocalizationsCa({super.localeName = 'ca'});
+
+  @override
+  AccessibilityTranslations get accessibility => _AccessibilityTranslationsCa(localeName: localeName);
+
+  @override
+  String get launchUrlError => "No s'ha pogut obrir l'enllaç";
+
+  @override
+  String get loadingUsersError => "Error de càrrega de l'usuari";
+
+  @override
+  String get noUsersLabel => 'Actualment no hi ha usuaris';
+
+  @override
+  String get noPhotoOrVideoLabel => 'No hi ha fotos ni vídeos';
+
+  @override
+  String get retryLabel => 'Torna-ho a provar';
+
+  @override
+  String get userLastOnlineText => 'Última vegada en línia';
+
+  @override
+  String get userOnlineText => 'En línia';
+
+  @override
+  String userTypingText(Iterable<User> users) {
+    if (users.isEmpty) return '';
+    final first = users.first;
+    if (users.length == 1) {
+      return '${first.name} està escrivint';
+    }
+    return '${first.name} y ${users.length - 1} estan escrivint';
+  }
+
+  @override
+  String get threadReplyLabel => 'Respon al fil';
+
+  @override
+  String get threadLabel => 'Fil';
+
+  @override
+  String get onlyVisibleToYouText => 'Només visible per a tu';
+
+  @override
+  String threadReplyCountText(int count) => '$count respostes al fil';
+
+  @override
+  String attachmentsUploadProgressText({
+    required int completed,
+    required int total,
+  }) => 'Pujats $completed de $total ...';
+
+  @override
+  String pinnedByUserText({
+    required User pinnedBy,
+    required User currentUser,
+  }) {
+    final pinnedByCurrentUser = currentUser.id == pinnedBy.id;
+    if (pinnedByCurrentUser) return 'Fixat per tu';
+    return 'Fixat per ${pinnedBy.name}';
+  }
+
+  @override
+  String get sendMessagePermissionError => 'No tens permís per enviar missatges';
+
+  @override
+  String get emptyMessagesText => 'Encara no hi ha missatges';
+
+  @override
+  String get genericErrorText => 'Hi ha hagut un problema';
+
+  @override
+  String get loadingMessagesError => 'Hi ha hagut un error mentre carregava el missatge';
+
+  @override
+  String resultCountText(int count) => '$count resultats';
+
+  @override
+  String get messageDeletedText => 'Aquest missatge ha estat esborrat';
+
+  @override
+  String get messageDeletedLabel => 'Missatge eliminat';
+
+  @override
+  String get systemMessageLabel => 'Missatge del sistema';
+
+  @override
+  String get editedMessageLabel => 'Editat';
+
+  @override
+  String get messageReactionsLabel => 'Reaccions dels missatges';
+
+  @override
+  String get emptyChatMessagesText => 'Encara no hi ha missatges...';
+
+  @override
+  String threadSeparatorText(int replyCount) {
+    if (replyCount == 1) return '1 resposta';
+    return '$replyCount respostes';
+  }
+
+  @override
+  String get connectedLabel => 'Connectat';
+
+  @override
+  String get disconnectedLabel => 'Desconnectat';
+
+  @override
+  String get reconnectingLabel => 'Reconnectant...';
+
+  @override
+  String get alsoSendAsDirectMessageLabel => 'Enviar també com a missatge directe';
+
+  @override
+  String get addACommentOrSendLabel => 'Afegir un comentari o enviar';
+
+  @override
+  String get searchGifLabel => 'Cerca de GIFs';
+
+  @override
+  String get writeAMessageLabel => 'Enviar un missatge';
+
+  @override
+  String get instantCommandsLabel => 'Commandes instantànies';
+
+  @override
+  String get commandUnavailableWhileEditingError => 'Not available while editing';
+
+  @override
+  String get commandUnavailableWhileQuotingError => 'Not available while replying';
+
+  @override
+  String get commandUnavailableError => 'Command not available';
+
+  @override
+  String fileTooLargeAfterCompressionError(double limitInMB) =>
+      'El fitxer és massa gran per descarregar-lo. '
+      'La mida màxima del fitxer és de $limitInMB MB. '
+      'Hem intentat comprimir-lo, pero no ha estat suficient.';
+
+  @override
+  String fileTooLargeError(double limitInMB) =>
+      'El fitxer és massa gran per descarregar-lo. '
+      'La mida màxima del fitxer és de $limitInMB MB.';
+
+  @override
+  String fileTypeNotSupportedError(String? extension) {
+    if (extension != null) return "Els fitxers '.$extension' no s'admeten per pujar.";
+    return "Aquest tipus de fitxer no s'admet per pujar.";
+  }
+
+  @override
+  String get couldNotReadBytesFromFileError => "No s'han pogut llegir els bytes del fitxer.";
+
+  @override
+  String get addAFileLabel => 'Afegeix un fitxer';
+
+  @override
+  String get photoFromCameraLabel => 'Foto de la càmera';
+
+  @override
+  String get uploadAFileLabel => 'Transferir un fitxer';
+
+  @override
+  String get uploadAPhotoLabel => 'Puja una foto';
+
+  @override
+  String get uploadAVideoLabel => 'Puja un vídeo';
+
+  @override
+  String get videoFromCameraLabel => 'Vídeo de la càmera';
+
+  @override
+  String get okLabel => "D'acord";
+
+  @override
+  String get somethingWentWrongError => 'Alguna cosa ha anat malament';
+
+  @override
+  String get connectionErrorTitle => 'Sense connexió a Internet';
+
+  @override
+  String get connectionErrorDescription => 'Comprova la teva connexió a Internet';
+
+  @override
+  String get slowConnectionErrorTitle => 'Connexió a Internet lenta';
+
+  @override
+  String get slowConnectionErrorDescription => 'Sembla que hi ha un problema amb la teva connexió a Internet';
+
+  @override
+  String get genericErrorTitle => 'Error';
+
+  @override
+  String get genericErrorDescription => 'Vaja, alguna cosa ha anat malament';
+
+  @override
+  String get addMoreFilesLabel => 'Afegir més';
+
+  @override
+  String get enablePhotoAndVideoAccessMessage =>
+      "Si us plau, permet l'accés a les teves fotos i vídeos per a que puguis compartir-los";
+
+  @override
+  String get allowGalleryAccessMessage => "Permet l'accés a la galeria";
+
+  @override
+  String get flagMessageLabel => 'Reporta un missatge';
+
+  @override
+  String get flagMessageQuestion =>
+      "Vols enviar una còpia d'aquest missatge a un moderador per una major investigació?";
+
+  @override
+  String get flagLabel => 'Reporta';
+
+  @override
+  String get cancelLabel => 'Cancel·la';
+
+  @override
+  String get flagMessageSuccessfulLabel => 'Missatge reportat';
+
+  @override
+  String get flagMessageSuccessfulText => 'Aquest missatge ha estat reportat a un moderador';
+
+  @override
+  String get deleteLabel => 'Esborra';
+
+  @override
+  String get deleteMessageLabel => 'Esborra el missatge';
+
+  @override
+  String get deleteMessageQuestion => 'Estàs segur que vols esborrar aquest missatge de forma permanent?';
+
+  @override
+  String get operationCouldNotBeCompletedText => "L'operació no s'ha pogut completar";
+
+  @override
+  String get replyLabel => 'Respondre';
+
+  @override
+  String togglePinUnpinText({required bool pinned}) {
+    if (pinned) return 'Desfixa de la conversa';
+    return 'Fixa a la conversa';
+  }
+
+  @override
+  String toggleDeleteRetryDeleteMessageText({required bool isDeleteFailed}) {
+    if (isDeleteFailed) return 'Reintenta esborrar el missatge';
+    return 'Esborra el missatge';
+  }
+
+  @override
+  String get copyMessageLabel => 'Copia el missatge';
+
+  @override
+  String get editMessageLabel => 'Edita el missatge';
+
+  @override
+  String toggleResendOrResendEditedMessage({required bool isUpdateFailed}) {
+    if (isUpdateFailed) return 'Reenvia el missatge modificat';
+    return 'Reenvia';
+  }
+
+  @override
+  String get photosLabel => 'Fotos';
+
+  @override
+  String get photosAndVideosLabel => 'Fotos i vídeos';
+
+  String _getDay(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+
+    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (date == today) {
+      return 'avui';
+    } else if (date == yesterday) {
+      return 'ahir';
+    } else {
+      return 'el ${Jiffy.parseFromDateTime(date).MMMd}';
+    }
+  }
+
+  @override
+  String sentAtText({required DateTime date, required DateTime time}) {
+    final atTime = Jiffy.parseFromDateTime(time.toLocal());
+    return 'Enviat el ${_getDay(date)} a les ${atTime.jm}';
+  }
+
+  @override
+  String get todayLabel => 'Avui';
+
+  @override
+  String get yesterdayLabel => 'Ahir';
+
+  @override
+  String get channelIsMutedText => 'El canal està silenciat';
+
+  @override
+  String get noTitleText => 'Sense títol';
+
+  @override
+  String get letsStartChattingLabel => 'Comencem a parlar!';
+
+  @override
+  String get sendingFirstMessageLabel => 'Què et sembla enviar el teu primer missatge?';
+
+  @override
+  String get startAChatLabel => 'Inicia una conversa';
+
+  @override
+  String get loadingChannelsError => 'Error al carregar els canals';
+
+  @override
+  String get deleteConversationLabel => 'Esborra la conversa';
+
+  @override
+  String get deleteConversationQuestion => 'Estàs segur que vols esborrar aquesta conversa?';
+
+  @override
+  String get streamChatLabel => 'Converses';
+
+  @override
+  String get searchingForNetworkText => 'Cercant xarxa';
+
+  @override
+  String get offlineLabel => 'Sense connexió...';
+
+  @override
+  String get tryAgainLabel => 'Torna-ho a provar';
+
+  @override
+  String membersCountText(int count) {
+    if (count == 1) return '1 membre';
+    return '$count membres';
+  }
+
+  @override
+  String watchersCountText(int count) {
+    if (count == 1) return '1 En línia';
+    return '$count En línia';
+  }
+
+  @override
+  String membersCountWithOnlineText({
+    required int memberCount,
+    required int onlineCount,
+  }) {
+    final members = membersCountText(memberCount);
+    if (onlineCount <= 0) return members;
+    return '$members, ${watchersCountText(onlineCount)}';
+  }
+
+  @override
+  String get viewInfoLabel => 'Veure informació';
+
+  @override
+  String get leaveGroupLabel => 'Sortir del Grup';
+
+  @override
+  String get leaveLabel => 'SURT';
+
+  @override
+  String get leaveConversationLabel => 'Surt de la conversa';
+
+  @override
+  String get leaveConversationQuestion => "Estàs segur que vols sortir d'aquesta conversa?";
+
+  @override
+  String get showInChatLabel => 'Mostra al xat';
+
+  @override
+  String get saveImageLabel => 'Guarda la imatge';
+
+  @override
+  String get saveVideoLabel => 'Guarda el vídeo';
+
+  @override
+  String get uploadErrorLabel => 'ERROR DE TRANSFERÈNCIA';
+
+  @override
+  String get giphyLabel => 'Giphy';
+
+  @override
+  String get shuffleLabel => 'Remena';
+
+  @override
+  String get sendLabel => 'Envia';
+
+  @override
+  String get withText => 'amb';
+
+  @override
+  String get inText => 'a';
+
+  @override
+  String get youText => 'Vostè';
+
+  @override
+  String galleryPaginationText({
+    required int currentPage,
+    required int totalPages,
+  }) => '${currentPage + 1} de $totalPages';
+
+  @override
+  String get fileText => 'Fitxer';
+
+  @override
+  String get replyToMessageLabel => 'Respondre al missatge';
+
+  @override
+  String attachmentLimitExceedError(int limit) => 'No és possible afegir més de $limit fitxers adjunts';
+
+  @override
+  String get viewLibrary => 'Veure llibreria';
+
+  @override
+  String slowModeOnLabel(int cooldownTimeOut) => 'Mode lent, espera ${cooldownTimeOut}s\u2026';
+
+  @override
+  String get commandUsernameLabel => '@username';
+
+  @override
+  String get downloadLabel => 'Descarrega';
+
+  @override
+  String toggleMuteUnmuteUserText({required bool isMuted}) {
+    if (isMuted) {
+      return "Activa so de l'usuari";
+    } else {
+      return "Silencia l'usuari";
+    }
+  }
+
+  @override
+  String toggleBlockUnblockUserText({required bool isBlocked}) {
+    if (isBlocked) return "Desbloquejar l'usuari";
+    return "Bloquejar l'usuari";
+  }
+
+  @override
+  String toggleMuteUnmuteGroupQuestion({required bool isMuted}) {
+    if (isMuted) {
+      return "Estàs segur que vols activar el so d'aquest grup?";
+    } else {
+      return 'Estàs segur que vols silenciar aquest grup?';
+    }
+  }
+
+  @override
+  String toggleMuteUnmuteUserQuestion({required bool isMuted}) {
+    if (isMuted) {
+      return "Estàs segur que vols activar el so d'aquest usuari?";
+    } else {
+      return 'Estàs segur que vols silenciar aquest usuari?';
+    }
+  }
+
+  @override
+  String toggleMuteUnmuteAction({required bool isMuted}) {
+    if (isMuted) {
+      return 'ACTIVA SO';
+    } else {
+      return 'SILENCIA';
+    }
+  }
+
+  @override
+  String toggleMuteUnmuteGroupText({required bool isMuted}) {
+    if (isMuted) {
+      return 'Activa so del grup';
+    } else {
+      return 'Silencia el grup';
+    }
+  }
+
+  @override
+  String get linkDisabledDetails => 'No es permet enviar enllaços a aquesta conversa';
+
+  @override
+  String get linkDisabledError => 'Els enllaços estan deshabilitats';
+
+  @override
+  String unreadMessagesSeparatorText() => 'Missatges nous';
+
+  @override
+  String unreadMessagesSeparatorLabel({required int count}) {
+    return Intl.plural(
+      count,
+      one: '$count missatge no llegit',
+      other: '$count missatges no llegits',
+      locale: localeName,
+    );
+  }
+
+  @override
+  String get enableFileAccessMessage => "Habilita l'accés als fitxers per poder compartir-los amb amics";
+
+  @override
+  String get allowFileAccessMessage => "Permet l'accés als fitxers";
+
+  @override
+  String get markAsUnreadLabel => 'Marcar com no llegit';
+
+  @override
+  String unreadCountIndicatorLabel({required int unreadCount}) {
+    return '$unreadCount sense llegir';
+  }
+
+  @override
+  String get markUnreadError =>
+      'Error en marcar el missatge com a no llegit. No es poden marcar'
+      ' missatges no llegits més antics que els 100 missatges més recents del'
+      ' canal.';
+
+  @override
+  String createPollLabel({bool isNew = false}) {
+    if (isNew) return 'Crear una enquesta nova';
+    return 'Crea enquesta';
+  }
+
+  @override
+  String questionLabel({bool isPlural = false}) {
+    if (isPlural) return 'Preguntes';
+    return 'Pregunta';
+  }
+
+  @override
+  String get askAQuestionLabel => 'Fes una pregunta';
+
+  @override
+  String? pollQuestionValidationError(int length, Range<int> range) {
+    final (:min, :max) = range;
+
+    // Check if the question is too short.
+    if (min != null && length < min) {
+      return 'La pregunta ha de tenir com a mínim $min caràcters';
+    }
+
+    // Check if the question is too long.
+    if (max != null && length > max) {
+      return 'La pregunta ha de tenir com a màxim $max caràcters';
+    }
+
+    return null;
+  }
+
+  @override
+  String optionLabel({bool isPlural = false}) {
+    if (isPlural) return 'Opcions';
+    return 'Opció';
+  }
+
+  @override
+  String get pollOptionEmptyError => "L'opció no pot estar buida";
+
+  @override
+  String get pollOptionDuplicateError => 'Això ja és una opció';
+
+  @override
+  String get addAnOptionLabel => 'Afegeix una opció';
+
+  @override
+  String get multipleAnswersLabel => 'Respostes múltiples';
+
+  @override
+  String get maximumVotesPerPersonLabel => 'Màxim de vots per persona';
+
+  @override
+  String? maxVotesPerPersonValidationError(int votes, Range<int> range) {
+    final (:min, :max) = range;
+
+    if (min != null && votes < min) {
+      return 'El recompte de vots ha de ser com a mínim de $min';
+    }
+
+    if (max != null && votes > max) {
+      return 'El recompte de vots ha de ser com a màxim de $max';
+    }
+
+    return null;
+  }
+
+  @override
+  String get anonymousPollLabel => 'Votació anònima';
+
+  @override
+  String get pollOptionsLabel => 'Opcions de votació';
+
+  @override
+  String get suggestAnOptionLabel => 'Suggerir una opció';
+
+  @override
+  String get enterANewOptionLabel => 'Introduïu una nova opció';
+
+  @override
+  String get addACommentLabel => 'Afegir un comentari';
+
+  @override
+  String get pollCommentsLabel => 'Comentaris de la votació';
+
+  @override
+  String get updateYourCommentLabel => 'Actualitzar el vostre comentari';
+
+  @override
+  String get enterYourCommentLabel => 'Introdueix el teu comentari';
+
+  @override
+  String get endVoteConfirmationTitle => 'Estàs segur que vols finalitzar la votació?';
+
+  @override
+  String get endVoteConfirmationMessage =>
+      'Vols finalitzar aquesta enquesta ara? Ningú no podrà votar més en aquesta enquesta.';
+
+  @override
+  String get deletePollOptionLabel => 'Eliminar opció';
+
+  @override
+  String get deletePollOptionQuestion => 'Estàs segur que vols eliminar aquesta opció?';
+
+  @override
+  String get createLabel => 'Crear';
+
+  @override
+  String get endLabel => 'Finalitzar';
+
+  @override
+  String pollVotingModeLabel(PollVotingMode votingMode) {
+    return votingMode.when(
+      disabled: () => 'Votació finalitzada',
+      unique: () => 'Seleccionar un',
+      limited: (count) => 'Seleccionar fins a $count',
+      all: () => 'Seleccionar un o més',
+    );
+  }
+
+  @override
+  String seeAllOptionsLabel({int? count}) {
+    if (count == null) return 'Veure totes les opcions';
+    return 'Veure totes les $count opcions';
+  }
+
+  @override
+  String get viewCommentsLabel => 'Veure comentaris';
+
+  @override
+  String get viewResultsLabel => 'Veure resultats';
+
+  @override
+  String get endVoteLabel => 'Finalitzar votació';
+
+  @override
+  String get pollResultsLabel => 'Resultats de la votació';
+
+  @override
+  String get pollVotesLabel => 'Vots';
+
+  @override
+  String showAllVotesLabel({int? count}) {
+    if (count == null) return 'Mostrar tots els vots';
+    return 'Mostrar tots els $count vots';
+  }
+
+  @override
+  String get viewAllLabel => 'Veure-ho tot';
+
+  @override
+  String voteCountLabel({int? count}) => switch (count) {
+    null || < 1 => '0 vots',
+    1 => '1 vot',
+    _ => '$count vots',
+  };
+
+  @override
+  String totalVoteCountLabel({int? count}) => switch (count) {
+    null || < 1 => '0 vots en total',
+    1 => '1 vot en total',
+    _ => '$count vots en total',
+  };
+
+  @override
+  String get noPollVotesLabel => 'No hi ha vots en aquest moment';
+
+  @override
+  String get loadingPollVotesError => 'Error en carregar els vots';
+
+  @override
+  String get repliedToLabel => 'resposta a:';
+
+  @override
+  String newThreadsLabel({required int count}) {
+    if (count == 1) return '1 fil nou';
+    return '$count fils nous';
+  }
+
+  @override
+  String get loadingLabel => 'Carregant...';
+
+  @override
+  String get slideToCancelLabel => 'Llisca per cancel·lar';
+
+  @override
+  String get holdToRecordLabel => 'Mantén premut per gravar, deixa anar per enviar';
+
+  @override
+  String get sendAnywayLabel => 'Enviar igualment';
+
+  @override
+  String get moderatedMessageBlockedText => 'Missatge bloquejat per les polítiques de moderació';
+
+  @override
+  String get moderationReviewModalTitle => 'Estàs segur?';
+
+  @override
+  String get moderationReviewModalDescription =>
+      '''Considera com el teu comentari pot fer sentir als altres i assegura't de seguir les nostres Directrius de la Comunitat.''';
+
+  @override
+  String get emptyMessagePreviewText => '';
+
+  @override
+  String get voiceRecordingText => 'Enregistrament de veu';
+
+  @override
+  String get audioAttachmentText => 'Àudio';
+
+  @override
+  String get imageAttachmentText => 'Imatge';
+
+  @override
+  String get videoAttachmentText => 'Vídeo';
+
+  @override
+  String get fileAttachmentText => 'Fitxer';
+
+  @override
+  String get linkAttachmentText => 'Enllaç';
+
+  @override
+  String filesAttachmentCountText(int count) => count == 1 ? 'Fitxer' : '$count fitxers';
+
+  @override
+  String photosAttachmentCountText(int count) => count == 1 ? 'Foto' : '$count fotos';
+
+  @override
+  String videosAttachmentCountText(int count) => count == 1 ? 'Vídeo' : '$count vídeos';
+
+  @override
+  String get pollYouVotedText => 'Has votat';
+
+  @override
+  String pollSomeoneVotedText(String username) => '$username ha votat';
+
+  @override
+  String get pollYouCreatedText => 'Has creat';
+
+  @override
+  String pollSomeoneCreatedText(String username) => '$username ha creat';
+
+  @override
+  String get draftLabel => 'Esborrany';
+
+  @override
+  String locationLabel({bool isLive = false}) {
+    if (isLive) return 'Ubicació en directe';
+    return 'Ubicació';
+  }
+
+  @override
+  String get noConversationsYetText => 'Encara no hi ha converses';
+
+  @override
+  String get replyToStartThreadText => 'Respon a un missatge per iniciar un fil';
+
+  @override
+  String get sendMessageToStartConversationText => 'Envia un missatge per iniciar la conversa';
+
+  @override
+  String get savedForLaterLabel => 'Desat per a més tard';
+
+  @override
+  String get repliedToThreadAnnotationLabel => 'Ha respost a un fil';
+
+  @override
+  String get alsoSentInChannelAnnotationLabel => 'També enviat al canal';
+
+  @override
+  String get viewLabel => 'Veure';
+
+  @override
+  String get reminderSetLabel => 'Recordatori establert';
+
+  @override
+  String reminderAtText(String time) => 'Avui a les $time';
+
+  @override
+  String get translatedLabel => 'Traduït';
+
+  @override
+  String get originalLabel => 'Original';
+
+  @override
+  String get showOriginalLabel => "Mostra l'original";
+
+  @override
+  String get showTranslationLabel => 'Mostra la traducció';
+
+  @override
+  String translatedFromLanguageText(String languageCode) => 'Traduït de ${_languageNameCa(languageCode)}';
+
+  @override
+  String get createPollPromptLabel => 'Crea una enquesta i deixa que tothom voti!';
+
+  @override
+  String get takePhotoAndShareLabel => 'Fes una foto i comparteix';
+
+  @override
+  String get takeVideoAndShareLabel => 'Grava un vídeo i comparteix';
+
+  @override
+  String get openCameraLabel => 'Obrir càmera';
+
+  @override
+  String get selectFilesToShareLabel => 'Seleccioneu fitxers per compartir';
+
+  @override
+  String get openFilesLabel => 'Obrir fitxers';
+
+  @override
+  String get unsupportedAttachmentLabel => 'Adjunt no compatible';
+
+  @override
+  String get confirmLabel => 'CONFIRMAR';
+
+  @override
+  String get emptyReactionsText => 'Encara no hi ha reaccions';
+
+  @override
+  String get loadingReactionsError => 'Error en carregar les reaccions';
+
+  @override
+  String get tapToRemoveReactionLabel => 'Toca per eliminar';
+
+  @override
+  String reactionsCountText(int count) => '$count reaccions';
+
+  @override
+  String get justNowLabel => 'Ara mateix';
+
+  @override
+  String replyToUserLabel(String userName) => 'Respon a $userName';
+
+  @override
+  String get multipleAnswersDescription => "Selecciona més d'una opció";
+
+  @override
+  String maximumVotesPerPersonDescription([Range<int>? range]) {
+    final (:min, :max) = range ?? (min: 2, max: 10);
+    return 'Tria entre $min\u2013$max opcions';
+  }
+
+  @override
+  String get anonymousPollDescription => 'Amaga qui ha votat';
+
+  @override
+  String get suggestAnOptionDescription => 'Permet que altres afegeixin opcions';
+
+  @override
+  String get addACommentDescription => 'Permet que altres afegeixin comentaris';
+
+  @override
+  String get notifyChannelText => "Notifica a tothom d'aquest canal";
+
+  @override
+  String get notifyHereText => "Notifica a tots els membres connectats d'aquest canal";
+
+  @override
+  String notifyRoleText(String role) => 'Notifica tots els membres $role';
+
+  @override
+  String scheduledMessageSendAtText({required DateTime scheduledAt}) {
+    final localScheduledAt = scheduledAt.toLocal();
+    final date = DateFormat.MMMEd(localeName).format(localScheduledAt);
+    final time = DateFormat.jm(localeName).format(localScheduledAt);
+    return 'Envia el $date a les $time';
+  }
+
+  @override
+  String get scheduledMessageSendingLabel => 'Enviant…';
+
+  @override
+  String get scheduledMessageUploadingLabel => 'Pujant…';
+
+  @override
+  String get scheduledThreadReplyPrefixText => 'Resposta al fil:';
+
+  @override
+  String scheduledQuoteReplyPrefixText({String? name}) {
+    if (name == null) return 'Resposta:';
+    return 'Resposta a $name:';
+  }
+
+  @override
+  String scheduledMessageFailureReasonText({
+    ScheduledMessageFailureReason? reason,
+    bool isQuoteDeleted = false,
+  }) {
+    return switch (reason) {
+      .requestFailed => "No s'ha pogut enviar. Torna-ho a provar",
+      .internalError => 'Alguna cosa ha anat malament. Torna-ho a provar',
+      .channelDeleted => "Aquest canal s'ha eliminat",
+      .userDeleted => "El teu compte s'ha eliminat",
+      .channelFrozen => 'Aquest canal està congelat',
+      .banned => 'No pots enviar missatges en aquest canal',
+      .noPermission => 'Ja no tens permís per publicar aquí',
+      .moderationBlocked => 'Bloquejat per la moderació',
+      .hookRejected => "Rebutjat per l'aplicació",
+      .expired => "No enviat: el servei s'ha endarrerit",
+      .pendingNotSupported => 'Aquest canal ara requereix aprovació. Torna a programar-lo.',
+      .invalidMessage when isQuoteDeleted => "El missatge citat s'ha eliminat. Edita'l per treure la cita.",
+      .invalidMessage => "El missatge ja no compleix els límits de l'aplicació. Edita'l.",
+      _ => 'Alguna cosa ha anat malament. Torna-ho a provar',
+    };
+  }
+
+  @override
+  String get noScheduledMessagesText => 'No hi ha missatges programats';
+
+  @override
+  String get loadingScheduledMessagesError => "No s'han pogut carregar els missatges programats";
+
+  @override
+  String get editAndRescheduleLabel => 'Edita i reprograma';
+
+  @override
+  String get rescheduleLabel => 'Reprograma';
+
+  @override
+  String get sendNowLabel => 'Envia ara';
+}
+
+class _AccessibilityTranslationsCa extends AccessibilityTranslations {
+  const _AccessibilityTranslationsCa({super.localeName = 'ca'});
+
+  @override
+  String get sendMessageTooltip => 'Envia el missatge';
+
+  @override
+  String get saveEditTooltip => "Desa l'edició";
+
+  @override
+  String get sendCommandTooltip => "Envia l'ordre";
+
+  @override
+  String slowModeTooltip({required int seconds}) {
+    if (seconds == 1) return 'Mode lent: 1 segon';
+    return 'Mode lent: $seconds segons';
+  }
+
+  @override
+  String get recordVoiceRecordingLabel => 'Enregistra un missatge de veu';
+
+  @override
+  String get cancelRecordingTooltip => "Cancel·la l'enregistrament";
+
+  @override
+  String get stopRecordingTooltip => "Atura l'enregistrament";
+
+  @override
+  String get sendRecordingTooltip => "Envia l'enregistrament";
+
+  @override
+  String recordingDurationLabel({required Duration duration}) => "Durada d'enregistrament, ${formatDuration(duration)}";
+
+  @override
+  String voiceRecordingPreviewPlayLabel({required Duration duration}) =>
+      "Reprodueix l'enregistrament de veu, ${formatDuration(duration)}";
+
+  @override
+  String voiceRecordingPreviewPauseLabel({required Duration duration}) =>
+      "Pausa l'enregistrament de veu, ${formatDuration(duration)}";
+
+  @override
+  String get attachmentPickerTooltip => 'Alterna el selector de fitxers adjunts';
+
+  @override
+  String get attachmentPickerOpenHint => 'toca dos vegades per obrir el selector de fitxers adjunts';
+
+  @override
+  String get attachmentPickerCloseHint => 'toca dos vegades per tancar el selector de fitxers adjunts';
+
+  @override
+  String get attachmentPickerOpenTapHint => 'obrir el selector de fitxers adjunts';
+
+  @override
+  String get attachmentPickerCloseTapHint => 'tancar el selector de fitxers adjunts';
+
+  @override
+  String get attachmentPickerOpenedAnnouncement => 'Selector de fitxers adjunts obert';
+
+  @override
+  String get attachmentPickerClosedAnnouncement => 'Selector de fitxers adjunts tancat';
+
+  @override
+  String voiceRecordingAttachmentLabel({Duration? duration}) {
+    if (duration == null) return 'Missatge de veu';
+    return 'Missatge de veu, ${formatDuration(duration)}';
+  }
+
+  @override
+  String videoAttachmentLabel({String? title}) {
+    if (title == null || title.isEmpty) return 'Vídeo';
+    return 'Vídeo, $title';
+  }
+
+  @override
+  String get gifAttachmentLabel => 'GIF';
+
+  @override
+  String imageAttachmentLabel({String? title}) {
+    if (title == null || title.isEmpty) return 'Foto';
+    return 'Foto, $title';
+  }
+
+  @override
+  String attachmentPositionLabel({required int index, required int total}) => '$index de $total';
+
+  @override
+  String get outgoingReplyToOwnMessageLabel => 'Has respost al teu propi missatge';
+
+  @override
+  String outgoingReplyToMessageLabel({required String authorName}) => 'Has respost al missatge de $authorName';
+
+  @override
+  String incomingReplyToOwnMessageLabel({required String replierName}) => '$replierName ha respost al teu missatge';
+
+  @override
+  String incomingReplyToMessageLabel({required String replierName, required String authorName}) =>
+      '$replierName ha respost al missatge de $authorName';
+
+  @override
+  String get voiceRecordingPlayTooltip => 'Reprodueix';
+
+  @override
+  String get voiceRecordingPauseTooltip => 'Pausa';
+
+  @override
+  String get voiceRecordingLoadingTooltip => 'Carregant';
+
+  @override
+  String get channelInfoLabel => 'Informació del canal';
+
+  @override
+  String get messageActionsLabel => 'Accions del missatge';
+
+  @override
+  String scheduledMessageSendAtLabel({required DateTime scheduledAt}) {
+    final date = formatDateTime(scheduledAt.toLocal());
+    return 'Programat per al $date';
+  }
+
+  @override
+  String galleryImageLabel({DateTime? createdAt}) {
+    if (createdAt == null) return 'Foto';
+    return 'Foto, ${formatDateTime(createdAt)}';
+  }
+
+  @override
+  String galleryVideoLabel({
+    DateTime? createdAt,
+    Duration? duration,
+  }) {
+    final parts = <String>[
+      'Vídeo',
+      if (duration != null) formatDuration(duration),
+      if (createdAt != null) formatDateTime(createdAt),
+    ];
+    return parts.join(', ');
+  }
+
+  @override
+  String get selectMediaTapHint => 'selecciona';
+
+  @override
+  String get deselectMediaTapHint => 'desselecciona';
+
+  @override
+  String get outgoingMessagePreviewLabel => 'Tu';
+
+  @override
+  String incomingMessagePreviewLabel({String? senderName}) {
+    return senderName ?? 'Missatge';
+  }
+
+  @override
+  String outgoingMessageLabel({required String body}) => 'Has dit, $body';
+
+  @override
+  String incomingMessageLabel({required String senderName, required String body}) => '$senderName ha dit, $body';
+
+  @override
+  String outgoingDeletedMessageLabel({required String body}) => 'Tu, $body';
+
+  @override
+  String incomingDeletedMessageLabel({required String senderName, required String body}) => '$senderName, $body';
+
+  @override
+  String get pollPreviewLabel => 'Enquesta';
+
+  @override
+  String get draftPreviewLabel => 'Esborrany';
+
+  @override
+  String get messageSendingStatusLabel => "S'està enviant";
+
+  @override
+  String get messageSentStatusLabel => 'Enviat';
+
+  @override
+  String get messageDeliveredStatusLabel => 'Lliurat';
+
+  @override
+  String get messageReadStatusLabel => 'Llegit';
+
+  @override
+  String get messageFailedStatusLabel => "No s'ha pogut enviar el missatge";
+
+  @override
+  String unreadMessagesLabel({required int count}) {
+    return Intl.plural(
+      count,
+      one: '$count missatge no llegit',
+      other: '$count missatges no llegits',
+      locale: localeName,
+    );
+  }
+
+  @override
+  String get channelGroupLabel => 'Grup';
+
+  @override
+  String get systemMessagePreviewLabel => 'Sistema';
+
+  @override
+  String get channelMutedLabel => 'silenciat';
+
+  @override
+  String get channelPinnedLabel => 'fixat';
+
+  @override
+  String get savePollTooltip => "Desa l'enquesta";
+
+  @override
+  String removePollOptionTooltip({String? optionText}) {
+    final trimmed = optionText?.trim();
+    if (trimmed == null || trimmed.isEmpty) return "Elimina l'opció";
+    return "Elimina l'opció $trimmed";
+  }
+
+  @override
+  String get recordingStartedAnnouncement =>
+      "Enregistrament iniciat. Llisca cap a l'esquerra per cancel·lar. Llisca cap amunt per bloquejar.";
+
+  @override
+  String get recordingLockedAnnouncement => 'Enregistrament bloquejat';
+
+  @override
+  String get recordingStoppedAnnouncement => 'Enregistrament aturat';
+
+  @override
+  String get recordingCancelledAnnouncement => 'Enregistrament cancel·lat';
+
+  @override
+  String get recordingCompletedAnnouncement => 'Enregistrament completat';
+
+  @override
+  String get imageAttachmentAddedAnnouncement => 'Foto afegida';
+
+  @override
+  String get imageAttachmentRemovedAnnouncement => 'Foto eliminada';
+
+  @override
+  String get videoAttachmentAddedAnnouncement => 'Vídeo afegit';
+
+  @override
+  String get videoAttachmentRemovedAnnouncement => 'Vídeo eliminat';
+
+  @override
+  String get gifAttachmentAddedAnnouncement => 'GIF afegit';
+
+  @override
+  String get gifAttachmentRemovedAnnouncement => 'GIF eliminat';
+
+  @override
+  String get fileAttachmentAddedAnnouncement => 'Fitxer afegit';
+
+  @override
+  String get fileAttachmentRemovedAnnouncement => 'Fitxer eliminat';
+
+  @override
+  String get voiceRecordingAttachmentAddedAnnouncement => 'Missatge de veu afegit';
+
+  @override
+  String get voiceRecordingAttachmentRemovedAnnouncement => 'Missatge de veu eliminat';
+
+  @override
+  String get attachmentAddedAnnouncement => 'Fitxer adjunt afegit';
+
+  @override
+  String get attachmentRemovedAnnouncement => 'Fitxer adjunt eliminat';
+
+  @override
+  String attachmentsAddedAnnouncement({required int count}) {
+    return Intl.plural(
+      count,
+      one: '$count fitxer adjunt afegit',
+      other: '$count fitxers adjunts afegits',
+      locale: localeName,
+    );
+  }
+
+  @override
+  String attachmentsRemovedAnnouncement({required int count}) {
+    return Intl.plural(
+      count,
+      one: '$count fitxer adjunt eliminat',
+      other: '$count fitxers adjunts eliminats',
+      locale: localeName,
+    );
+  }
+
+  @override
+  String formatRecentDateTime(DateTime date) {
+    if (date.isWithinLastMinute) return 'Ara mateix';
+
+    final localDate = date.toLocal();
+    final jiffyDate = Jiffy.parseFromDateTime(localDate);
+    final time = jiffyDate.jm;
+
+    if (localDate.isToday) return 'Avui a les $time';
+    if (localDate.isYesterday) return 'Ahir a les $time';
+    if (localDate.isWithinLastWeek) return '${jiffyDate.EEEE} a les $time';
+    if (localDate.isInSameYear) {
+      return '${jiffyDate.format(pattern: 'd MMM')} a les $time';
+    }
+    return '${jiffyDate.format(pattern: 'd MMM yyyy')} a les $time';
+  }
+
+  @override
+  String formatDateTime(DateTime dateTime) {
+    final jiffy = Jiffy.parseFromDateTime(dateTime);
+    return '${jiffy.EEEE}, ${jiffy.yMMMMd}, ${jiffy.jm}';
+  }
+
+  @override
+  String formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    final parts = <String>[
+      if (hours > 0) Intl.plural(hours, one: '$hours hora', other: '$hours hores', locale: localeName),
+      if (minutes > 0) Intl.plural(minutes, one: '$minutes minut', other: '$minutes minuts', locale: localeName),
+      if (seconds > 0 || (hours == 0 && minutes == 0))
+        Intl.plural(seconds, one: '$seconds segon', other: '$seconds segons', locale: localeName),
+    ];
+    return parts.join(', ');
+  }
+}
+
+// Display name for each language code Stream Chat's translation API
+// supports (`Message.i18n['language']`). Falls back to the uppercased code
+// itself for anything unrecognized.
+String _languageNameCa(String code) => _languageNamesCa[code] ?? code.toUpperCase();
+
+const _languageNamesCa = <String, String>{
+  'af': 'Afrikaans',
+  'sq': 'Albanès',
+  'am': 'Amhàric',
+  'ar': 'Àrab',
+  'az': 'Azerbaidjanès',
+  'bn': 'Bengalí',
+  'bs': 'Bosnià',
+  'bg': 'Búlgar',
+  'zh': 'Xinès (simplificat)',
+  'zh-TW': 'Xinès (tradicional)',
+  'hr': 'Croat',
+  'cs': 'Txec',
+  'da': 'Danès',
+  'fa-AF': 'Dari',
+  'nl': 'Neerlandès',
+  'en': 'Anglès',
+  'et': 'Estonià',
+  'fi': 'Finès',
+  'fr': 'Francès',
+  'fr-CA': 'Francès (Canadà)',
+  'ka': 'Georgià',
+  'de': 'Alemany',
+  'el': 'Grec',
+  'ht': 'Crioll haitià',
+  'ha': 'Haussa',
+  'he': 'Hebreu',
+  'hi': 'Hindi',
+  'hu': 'Hongarès',
+  'id': 'Indonesi',
+  'it': 'Italià',
+  'ja': 'Japonès',
+  'ko': 'Coreà',
+  'lv': 'Letó',
+  'lt': 'Lituà',
+  'ms': 'Malai',
+  'no': 'Noruec',
+  'fa': 'Persa',
+  'ps': 'Paixtu',
+  'pl': 'Polonès',
+  'pt': 'Portuguès',
+  'ro': 'Romanès',
+  'ru': 'Rus',
+  'sr': 'Serbi',
+  'sk': 'Eslovac',
+  'sl': 'Eslovè',
+  'so': 'Somali',
+  'es': 'Espanyol',
+  'es-MX': 'Espanyol (Mèxic)',
+  'sw': 'Swahili',
+  'sv': 'Suec',
+  'tl': 'Tagal',
+  'ta': 'Tàmil',
+  'th': 'Tailandès',
+  'tr': 'Turc',
+  'uk': 'Ucraïnès',
+  'ur': 'Urdú',
+  'vi': 'Vietnamita',
+};

@@ -1,0 +1,61 @@
+name: sample_app
+description: A new Flutter project.
+publish_to: "none"
+version: 10.7.0
+
+# Note: The environment configuration and dependency versions are managed by Melos.
+#
+# Do not edit them manually.
+#
+# Steps to update dependencies:
+#   1. Modify the version in the melos.yaml file.
+#   2. Run `melos bootstrap` to apply changes.
+#
+# Steps to add a new dependency:
+#   1. Add the dependency to this list.
+#   2. Add it to the melos.yaml file for future updates.
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
+
+dependencies:
+  app_badge_plus: ^1.3.2
+  avatar_glow: ^3.0.0
+  collection: ^1.19.1
+  dynamic_color: ^1.8.1
+  firebase_core: ^4.0.0
+  firebase_crashlytics: ">=5.2.0 <5.2.5"
+  firebase_messaging: ">=16.0.0 <16.4.2"
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^21.0.0
+  flutter_map: ^8.1.1
+  flutter_map_animations: ^0.9.0
+  flutter_secure_storage: ^10.3.1
+  flutter_slidable: ^3.1.1
+  flutter_svg: ^2.3.0
+  flutter_timezone: ^5.1.1
+  geolocator: ^13.0.0
+  go_router: ^14.6.2
+  image_picker: ^1.2.2
+  latlong2: ^0.9.1
+  lottie: ^3.3.3
+  marionette_flutter: ^0.6.0
+  path_provider_android: ">=2.2.5 <2.3.0"
+  rxdart: ^0.28.0
+  stream_chat_flutter: ^10.7.0
+  stream_chat_localizations: ^10.7.0
+  stream_chat_persistence: ^10.7.0
+  streaming_shared_preferences: ^2.0.0
+  video_player: ^2.11.1
+  yaml: ^3.1.2
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
+    - pubspec.lock

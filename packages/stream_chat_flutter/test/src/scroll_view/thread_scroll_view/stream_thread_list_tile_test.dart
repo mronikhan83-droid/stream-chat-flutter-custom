@@ -1,0 +1,442 @@
+import 'package:alchemist/alchemist.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+
+import '../../mocks.dart';
+
+void main() {
+  final user1 = User(id: 'uid1', name: 'User 1');
+  final user2 = User(id: 'uid2', name: 'User 2');
+  final createdAt = DateTime.parse('2021-07-20T16:00:00.000Z');
+  final thread = Thread(
+    activeParticipantCount: 2,
+    channelCid: 'channel-type:channel-id',
+    channel: ChannelModel(
+      cid: 'channel-type:channel-id',
+      extraData: const {'name': 'Group ride'},
+    ),
+    parentMessageId: 'parent-message-id',
+    parentMessage: Message(
+      id: 'parent-message-id',
+      text: "Hey everyone, who's up for a group ride this Saturday morning?",
+    ),
+    createdByUserId: 'uid1',
+    createdBy: user2,
+    participantCount: 2,
+    threadParticipants: [
+      ThreadParticipant(
+        user: user1,
+        channelCid: '',
+        createdAt: createdAt,
+        lastReadAt: createdAt,
+      ),
+      ThreadParticipant(
+        user: user2,
+        channelCid: '',
+        createdAt: createdAt,
+        lastReadAt: createdAt,
+      ),
+    ],
+    lastMessageAt: createdAt,
+    createdAt: createdAt,
+    updatedAt: createdAt,
+    title: 'Group ride preparation and discussion',
+    replyCount: 1,
+    latestReplies: [
+      Message(
+        id: 'mid1',
+        text: 'See you all there, stay safe on the roads!',
+        user: user1,
+        createdAt: createdAt,
+        updatedAt: createdAt,
+      ),
+    ],
+    read: [
+      Read(
+        user: user2,
+        lastRead: createdAt,
+        unreadMessages: 3,
+      ),
+    ],
+  );
+
+  for (final brightness in Brightness.values) {
+    goldenTest(
+      '[${brightness.name}] -> StreamThreadListTile looks fine',
+      fileName: 'stream_thread_list_tile_${brightness.name}',
+      constraints: const BoxConstraints.tightFor(width: 600, height: 150),
+      builder: () => _wrapWithMaterialApp(
+        StreamThreadListTile(thread: thread, currentUser: user2),
+        brightness: brightness,
+      ),
+    );
+  }
+
+  testWidgets('truncates the timestamp instead of overflowing on a narrow width', (tester) async {
+    final tile = StreamThreadListTile(thread: thread, currentUser: user2);
+
+    await tester.pumpWidget(_wrapWithMaterialApp(SizedBox(width: 240, child: tile)));
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tints the background when selected', (tester) async {
+    final tile = StreamThreadListTile(thread: thread, currentUser: user2, selected: true);
+
+    await tester.pumpWidget(_wrapWithMaterialApp(tile));
+
+    final colorScheme = tester.element(find.byType(StreamThreadListTile)).streamColorScheme;
+    expect(_tileBackground(tester), Color.alphaBlend(colorScheme.backgroundSelected, colorScheme.backgroundApp));
+  });
+
+  testWidgets('does not tint the background by default', (tester) async {
+    final tile = StreamThreadListTile(thread: thread, currentUser: user2);
+
+    await tester.pumpWidget(_wrapWithMaterialApp(tile));
+
+    final colorScheme = tester.element(find.byType(StreamThreadListTile)).streamColorScheme;
+    expect(_tileBackground(tester), colorScheme.backgroundApp);
+  });
+
+  testWidgets('announces itself as selected when selected', (tester) async {
+    final handle = tester.ensureSemantics();
+    final tile = StreamThreadListTile(thread: thread, currentUser: user2, selected: true);
+
+    await tester.pumpWidget(_wrapWithMaterialApp(tile));
+
+    expect(tester.getSemantics(find.byType(StreamThreadListTile)), isSemantics(isSelected: true));
+    handle.dispose();
+  });
+
+  test('copyWith replaces selected and keeps the other fields', () {
+    final tile = StreamThreadListTile(thread: thread, currentUser: user2);
+
+    final copy = tile.copyWith(selected: true);
+
+    expect(copy.props.selected, isTrue);
+    expect(copy.props.thread, thread);
+    expect(copy.props.currentUser, user2);
+  });
+
+  group('StreamThreadListTile a11y', () {
+    testWidgets(
+      'merges children into a single accessible node with the composed label',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+
+        await tester.pumpWidget(
+          _wrapWithMaterialApp(
+            StreamThreadListTile(thread: thread, currentUser: user2),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // The tile's composed label carries the channel name, unread
+        // badge, message preview, reply count, and timestamp — merged
+        // into one accessible node. MergeSemantics joins the child
+        // labels with newlines, so match with `dotAll: true` so `.`
+        // crosses breaks.
+        expect(
+          find.bySemanticsLabel(
+            RegExp(
+              'Group ride.*3 unread messages.*group ride this Saturday.*1 reply',
+              dotAll: true,
+            ),
+          ),
+          findsOneWidget,
+        );
+
+        handle.dispose();
+      },
+    );
+
+    testWidgets(
+      'unread count == 0 omits the unread label from the announcement',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+
+        final threadWithoutUnread = thread.copyWith(
+          read: [
+            Read(user: user2, lastRead: createdAt, unreadMessages: 0),
+          ],
+        );
+
+        await tester.pumpWidget(
+          _wrapWithMaterialApp(
+            StreamThreadListTile(
+              thread: threadWithoutUnread,
+              currentUser: user2,
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        expect(find.bySemanticsLabel(RegExp('Group ride')), findsOneWidget);
+        expect(find.bySemanticsLabel(RegExp('unread')), findsNothing);
+
+        handle.dispose();
+      },
+    );
+  });
+
+  group('Formatter Tests', () {
+    testWidgets(
+      'StreamThreadListTile displays custom formatted timestamp',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrapWithMaterialApp(
+            StreamThreadListTileTheme(
+              data: StreamThreadListTileThemeData(
+                threadLatestReplyTimestampFormatter: (context, timestamp) {
+                  return 'CUSTOM_FORMAT_20_07_2021';
+                },
+              ),
+              child: StreamThreadListTile(thread: thread, currentUser: user2),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Verify the custom formatted text is visible
+        expect(find.text('CUSTOM_FORMAT_20_07_2021'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'StreamThreadListTile inner theme overrides outer theme',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrapWithMaterialApp(
+            StreamThreadListTileTheme(
+              data: StreamThreadListTileThemeData(
+                threadLatestReplyTimestampFormatter: (context, timestamp) {
+                  return 'OUTER_FORMATTER';
+                },
+              ),
+              child: StreamThreadListTileTheme(
+                data: StreamThreadListTileThemeData(
+                  threadLatestReplyTimestampFormatter: (context, timestamp) {
+                    return 'INNER_FORMATTER';
+                  },
+                ),
+                child: StreamThreadListTile(thread: thread, currentUser: user2),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Inner formatter should be used
+        expect(find.text('INNER_FORMATTER'), findsOneWidget);
+        expect(find.text('OUTER_FORMATTER'), findsNothing);
+      },
+    );
+  });
+
+  testWidgets('keeps the app-wide root message style under a local theme', (tester) async {
+    await tester.pumpWidget(
+      _wrapWithMaterialApp(
+        StreamThreadListTileTheme(
+          data: const StreamThreadListTileThemeData(padding: EdgeInsets.all(4)),
+          child: StreamThreadListTile(thread: thread, currentUser: user2),
+        ),
+        chatTheme: StreamChatThemeData(
+          threadListTileTheme: const StreamThreadListTileThemeData(
+            threadReplyToMessageStyle: TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+
+    final preview = tester.widget<RichText>(
+      find.descendant(of: find.byType(StreamMessagePreviewText), matching: find.byType(RichText)).first,
+    );
+    expect(preview.text.style?.color, Colors.red);
+  });
+
+  testWidgets('shows a deleted root message in the secondary text color', (tester) async {
+    final deletedThread = thread.copyWith(parentMessage: _deletedMessage());
+    await tester.pumpWidget(_wrapWithMaterialApp(StreamThreadListTile(thread: deletedThread, currentUser: user2)));
+
+    final colorScheme = tester.element(find.byType(StreamThreadListTile)).streamColorScheme;
+    expect(_deletedMessageColor(tester), colorScheme.textSecondary);
+  });
+
+  testWidgets('shows a deleted root message in an app-wide deleted style', (tester) async {
+    final deletedThread = thread.copyWith(parentMessage: _deletedMessage());
+    await tester.pumpWidget(
+      _wrapWithMaterialApp(
+        StreamThreadListTile(thread: deletedThread, currentUser: user2),
+        chatTheme: StreamChatThemeData(
+          messagePreviewTextTheme: const StreamMessagePreviewTextThemeData(
+            deletedContentStyle: TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+
+    expect(_deletedMessageColor(tester), Colors.red);
+  });
+
+  testWidgets('keeps the secondary color under an app-wide italic deleted style', (tester) async {
+    final deletedThread = thread.copyWith(parentMessage: _deletedMessage());
+    await tester.pumpWidget(
+      _wrapWithMaterialApp(
+        StreamThreadListTile(thread: deletedThread, currentUser: user2),
+        chatTheme: StreamChatThemeData(
+          messagePreviewTextTheme: const StreamMessagePreviewTextThemeData(
+            deletedContentStyle: TextStyle(fontStyle: FontStyle.italic),
+          ),
+        ),
+      ),
+    );
+
+    final colorScheme = tester.element(find.byType(StreamThreadListTile)).streamColorScheme;
+    expect(_deletedMessageColor(tester), colorScheme.textSecondary);
+  });
+
+  testWidgets('prefers the themed preview style over enclosing and app-wide ones', (tester) async {
+    final deletedThread = thread.copyWith(parentMessage: _deletedMessage());
+    await tester.pumpWidget(
+      _wrapWithMaterialApp(
+        StreamMessagePreviewTextTheme(
+          data: const StreamMessagePreviewTextThemeData(
+            deletedContentStyle: TextStyle(color: Colors.blue),
+          ),
+          child: StreamThreadListTileTheme(
+            data: const StreamThreadListTileThemeData(
+              messagePreviewTextTheme: StreamMessagePreviewTextThemeData(
+                deletedContentStyle: TextStyle(color: Colors.orange),
+              ),
+            ),
+            child: StreamThreadListTile(thread: deletedThread, currentUser: user2),
+          ),
+        ),
+        chatTheme: StreamChatThemeData(
+          messagePreviewTextTheme: const StreamMessagePreviewTextThemeData(
+            deletedContentStyle: TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+
+    expect(_deletedMessageColor(tester), Colors.orange);
+  });
+
+  testWidgets('shows the sender prefix semibold in the secondary text color', (tester) async {
+    final groupThread = thread.copyWith(
+      channel: ChannelModel(cid: 'channel-type:channel-id', memberCount: 3),
+      parentMessage: Message(
+        id: 'parent-message-id',
+        text: 'Who is in?',
+        user: User(id: 'ann', name: 'Ann Lee'),
+      ),
+    );
+    await tester.pumpWidget(_wrapWithMaterialApp(StreamThreadListTile(thread: groupThread, currentUser: user2)));
+
+    final element = tester.element(find.byType(StreamThreadListTile));
+    final style = _paintedStyle(tester, 'Ann: ');
+    expect(style?.color, element.streamColorScheme.textSecondary);
+    expect(style?.fontWeight, element.streamTypography.fontWeight.semibold);
+  });
+
+  testWidgets('shows a deleted root message in the themed preview style', (tester) async {
+    final deletedThread = thread.copyWith(parentMessage: _deletedMessage());
+    await tester.pumpWidget(
+      _wrapWithMaterialApp(
+        StreamThreadListTileTheme(
+          data: const StreamThreadListTileThemeData(
+            messagePreviewTextTheme: StreamMessagePreviewTextThemeData(
+              deletedContentStyle: TextStyle(color: Colors.orange),
+            ),
+          ),
+          child: StreamThreadListTile(thread: deletedThread, currentUser: user2),
+        ),
+      ),
+    );
+
+    expect(_deletedMessageColor(tester), Colors.orange);
+  });
+
+  testWidgets('shows the root message in the primary text color', (tester) async {
+    await tester.pumpWidget(_wrapWithMaterialApp(StreamThreadListTile(thread: thread, currentUser: user2)));
+
+    final colorScheme = tester.element(find.byType(StreamThreadListTile)).streamColorScheme;
+    expect(_paintedStyle(tester, thread.parentMessage!.text!)?.color, colorScheme.textPrimary);
+  });
+}
+
+// The background color the tile paints behind its content.
+Color? _tileBackground(WidgetTester tester) {
+  final ink = find.descendant(of: find.byType(StreamThreadListTile), matching: find.byType(Ink));
+  return (tester.widget<Ink>(ink).decoration! as ShapeDecoration).color;
+}
+
+Message _deletedMessage() => Message(
+  id: 'parent-message-id',
+  text: "Hey everyone, who's up for a group ride this Saturday morning?",
+  type: MessageType.deleted,
+  user: User(id: 'uid1', name: 'User 1'),
+  deletedAt: DateTime.parse('2021-07-20T17:00:00.000Z'),
+);
+
+// The color the "Message deleted" text paints with.
+Color? _deletedMessageColor(WidgetTester tester) => _paintedStyle(tester, 'Message deleted')?.color;
+
+// The style the preview span with [text] paints with, after every ancestor
+// span's style is applied.
+TextStyle? _paintedStyle(WidgetTester tester, String text) {
+  final richText = tester.widget<RichText>(
+    find.descendant(of: find.byType(StreamMessagePreviewText), matching: find.byType(RichText)).first,
+  );
+
+  TextStyle? result;
+  void visit(InlineSpan span, TextStyle? inherited) {
+    if (span is! TextSpan) return;
+    final style = inherited?.merge(span.style) ?? span.style;
+    if (span.text == text) result = style;
+    for (final child in span.children ?? const <InlineSpan>[]) {
+      visit(child, style);
+    }
+  }
+
+  visit(richText.text, null);
+  return result;
+}
+
+Widget _wrapWithMaterialApp(
+  Widget widget, {
+  Brightness brightness = Brightness.light,
+  StreamChatThemeData? chatTheme,
+}) {
+  final client = MockClient();
+  final clientState = MockClientState();
+  final currentUser = OwnUser(id: 'current-user-id', name: 'Current User');
+
+  when(() => client.state).thenReturn(clientState);
+  when(() => clientState.currentUser).thenReturn(currentUser);
+
+  return MaterialApp(
+    theme: ThemeData(brightness: brightness),
+    home: StreamChat(
+      client: client,
+      configData: StreamChatConfigurationData(),
+      connectivityStream: Stream.value([ConnectivityResult.wifi]),
+      themeData: chatTheme ?? StreamChatThemeData(),
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: context.streamColorScheme.backgroundApp,
+            body: Center(child: widget),
+          );
+        },
+      ),
+    ),
+  );
+}

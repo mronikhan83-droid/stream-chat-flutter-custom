@@ -1,0 +1,156 @@
+// coverage:ignore-file
+import 'package:drift/drift.dart';
+import '../converter/list_converter.dart';
+import '../converter/map_converter.dart';
+import '../converter/reaction_groups_converter.dart';
+import 'channels.dart';
+
+/// Represents a [Messages] table in [DriftChatDatabase].
+@DataClassName('MessageEntity')
+@TableIndex(name: 'idx_messages_channel_cid', columns: {#channelCid})
+class Messages extends Table {
+  /// The message id
+  TextColumn get id => text()();
+
+  /// The text of this message
+  TextColumn get messageText => text().nullable()();
+
+  /// The list of attachments, either provided by the user
+  /// or generated from a command or as a result of URL scraping.
+  TextColumn get attachments => text().map(ListConverter<String>())();
+
+  /// The current state of the message.
+  TextColumn get state => text()();
+
+  /// The message type
+  TextColumn get type => text().withDefault(const Constant('regular'))();
+
+  /// True if the message contains a "@channel" mention.
+  BoolColumn get mentionedChannel => boolean().nullable()();
+
+  /// The list of group ids mentioned in the message.
+  TextColumn get mentionedGroupIds => text().nullable().map(ListConverter<String>())();
+
+  /// The list of groups mentioned in the message,
+  /// hydrated by the server from [mentionedGroupIds].
+  TextColumn get mentionedGroups => text().nullable().map(ListConverter<String>())();
+
+  /// True if the message contains a "@here" mention.
+  BoolColumn get mentionedHere => boolean().nullable()();
+
+  /// The list of roles mentioned in the message.
+  TextColumn get mentionedRoles => text().nullable().map(ListConverter<String>())();
+
+  /// The list of user mentioned in the message
+  TextColumn get mentionedUsers => text().map(ListConverter<String>())();
+
+  /// A map describing the reaction group for every reaction
+  TextColumn get reactionGroups => text().map(ReactionGroupsConverter()).nullable()();
+
+  /// The ID of the parent message, if the message is a thread reply.
+  TextColumn get parentId => text().nullable()();
+
+  /// The ID of the quoted message, if the message is a quoted reply.
+  TextColumn get quotedMessageId => text().nullable()();
+
+  /// The ID of the poll, if the message is a poll.
+  TextColumn get pollId => text().nullable()();
+
+  /// Number of replies for this message.
+  IntColumn get replyCount => integer().nullable()();
+
+  /// Check if this message needs to show in the channel.
+  BoolColumn get showInChannel => boolean().nullable()();
+
+  /// If true the message is shadowed
+  BoolColumn get shadowed => boolean().withDefault(const Constant(false))();
+
+  /// A used command name.
+  TextColumn get command => text().nullable()();
+
+  /// The DateTime on which the message was created.
+  ///
+  /// Returns the latest between [localCreatedAt] and [remoteCreatedAt].
+  /// If both are null, returns [currentDateAndTime].
+  Expression<DateTime> get createdAt {
+    return coalesce<DateTime>(
+      [remoteCreatedAt, localCreatedAt, currentDateAndTime],
+    );
+  }
+
+  /// The DateTime on which the message was created on the client.
+  DateTimeColumn get localCreatedAt => dateTime().nullable()();
+
+  /// The DateTime on which the message was created on the server.
+  DateTimeColumn get remoteCreatedAt => dateTime().nullable()();
+
+  /// The DateTime on which the message was updated last time.
+  ///
+  /// Returns the latest between [localUpdatedAt] and [remoteUpdatedAt].
+  /// If both are null, returns [createdAt].
+  Expression<DateTime> get updatedAt {
+    return coalesce<DateTime>(
+      [remoteUpdatedAt, localUpdatedAt, createdAt],
+    );
+  }
+
+  /// The DateTime on which the message was updated on the client.
+  DateTimeColumn get localUpdatedAt => dateTime().nullable()();
+
+  /// The DateTime on which the message was updated on the server.
+  DateTimeColumn get remoteUpdatedAt => dateTime().nullable()();
+
+  /// The DateTime on which the message was deleted.
+  ///
+  /// Returns the latest between [localDeletedAt] and [remoteDeletedAt].
+  Expression<DateTime> get deletedAt {
+    return coalesce<DateTime>(
+      [remoteDeletedAt, localDeletedAt],
+    );
+  }
+
+  /// The DateTime on which the message was deleted on the client.
+  DateTimeColumn get localDeletedAt => dateTime().nullable()();
+
+  /// The DateTime on which the message was deleted on the server.
+  DateTimeColumn get remoteDeletedAt => dateTime().nullable()();
+
+  /// Whether the message was deleted only for the current user.
+  BoolColumn get deletedForMe => boolean().nullable()();
+
+  /// The DateTime at which the message text was edited
+  DateTimeColumn get messageTextUpdatedAt => dateTime().nullable()();
+
+  /// Id of the User who sent the message
+  TextColumn get userId => text().nullable()();
+
+  /// The channel role of the user who sent the message
+  TextColumn get channelRole => text().nullable()();
+
+  /// Whether the message is pinned or not
+  BoolColumn get pinned => boolean().withDefault(const Constant(false))();
+
+  /// The DateTime at which the message was pinned
+  DateTimeColumn get pinnedAt => dateTime().nullable()();
+
+  /// The DateTime on which the message pin expires
+  DateTimeColumn get pinExpires => dateTime().nullable()();
+
+  /// Id of the User who pinned the message
+  TextColumn get pinnedByUserId => text().nullable()();
+
+  /// The channel cid of which this message is part of
+  TextColumn get channelCid => text().references(Channels, #cid, onDelete: KeyAction.cascade)();
+
+  /// A Map of [messageText] translations.
+  TextColumn get i18n => text().nullable().map(NullableMapConverter<String>())();
+
+  /// The list of user ids that should be able to see the message.
+  TextColumn get restrictedVisibility => text().nullable().map(ListConverter<String>())();
+
+  /// Message custom extraData
+  TextColumn get extraData => text().nullable().map(MapConverter())();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
