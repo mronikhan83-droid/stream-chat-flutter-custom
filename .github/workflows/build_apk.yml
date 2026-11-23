@@ -21,9 +21,10 @@ jobs:
         run: |
           flutter pub get
           cd sample_app 
-          flutter build apk --release --split-per-abi
+          # ফায়ারবেস প্লাগিন ফেইল করলে সেটি এড়ানোর জন্য বিল্ড কমান্ড
+          flutter build apk --release --no-shrink
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: release-apk
-          path: sample_app/build/app/outputs/flutter-apk/app-release.apk
+          path: sample_app/build/app/outputs/flutter-apk/app-release-*.apk
